@@ -68,6 +68,11 @@ android {
 
 kotlin {
     jvmToolchain(17)
+    compilerOptions {
+        // Apply qualifiers such as @IoDispatcher to the constructor parameter
+        // and the property, as Kotlin will by default in a future release.
+        freeCompilerArgs.add("-Xannotation-default-target=param-property")
+    }
 }
 
 room {

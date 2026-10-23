@@ -15,6 +15,9 @@ interface BaseMapDao {
     @Query("SELECT COUNT(*) FROM base_maps")
     suspend fun count(): Int
 
+    @Query("SELECT * FROM base_maps WHERE uri = :uri LIMIT 1")
+    suspend fun findByUri(uri: String): BaseMapEntity?
+
     @Upsert
     suspend fun upsert(baseMap: BaseMapEntity): Long
 

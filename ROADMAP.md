@@ -44,47 +44,52 @@ Goal: **open a base map and a KML file, project them orthographically, and view
 and download the result.**
 
 ### Inputs
-- [ ] Bundled Earth base map: NASA Blue Marble (public domain), shipped
+- [x] Bundled Earth base map: NASA Blue Marble (public domain), shipped
       downsampled (for example 4096 × 2048 WebP) in `assets/`, with attribution
       shown in the app.
-- [ ] Open a user equirectangular bitmap (PNG, JPEG, WebP) through the Storage
+- [x] Open a user equirectangular bitmap (PNG, JPEG, WebP) through the Storage
       Access Framework. Warn when the aspect ratio isn't 2:1.
-- [ ] Open a KML file through the Storage Access Framework. Support
+- [x] Open a KML file through the Storage Access Framework. Support
       `Placemark` with `Point`, `LineString`, `LinearRing`, `Polygon` and
       `MultiGeometry`, plus basic `Style` (line color and width, fill color).
       Ignore other elements without failing.
 
 ### Projection
-- [ ] `Projection` interface in `geometry`: forward `(lon, lat) → (x, y)`,
+- [x] `Projection` interface in `geometry`: forward `(lon, lat) → (x, y)`,
       inverse `(x, y) → (lon, lat)?`, a visibility test, and the boundary
       outline of the map. Later projections plug into this interface.
-- [ ] **Orthographic** projection (globe view) with a configurable center
+- [x] **Orthographic** projection (globe view) with a configurable center
       (lon₀, lat₀).
-- [ ] Equirectangular as an identity/reference projection, used in tests.
+- [x] Equirectangular as an identity/reference projection, used in tests.
 
 ### Rendering
-- [ ] Raster reprojection by inverse mapping: for each output pixel, apply the
+- [x] Raster reprojection by inverse mapping: for each output pixel, apply the
       inverse projection and sample the source bitmap (bilinear sampling, with
       longitude wrapping at the antimeridian).
-- [ ] Vector projection of the KML geometry: densify long segments along great
+- [x] Vector projection of the KML geometry: densify long segments along great
       circles, clip at the horizon (the back hemisphere for orthographic), and
       drop or split geometry that crosses it.
-- [ ] Output an **SVG** document: the projected raster embedded as a base64
+- [x] Output an **SVG** document: the projected raster embedded as a base64
       `<image>`, KML geometry as `<path>`/`<circle>` elements, the globe outline,
       and an optional graticule.
 
 ### Viewer and export
-- [ ] Zoomable, pannable viewer (pinch zoom, drag, double-tap to reset).
+- [x] Zoomable, pannable viewer (pinch zoom, drag, double-tap to reset).
       Draw the same scene to a Compose `Canvas` rather than re-rendering the SVG
       for display.
-- [ ] Simple controls: choose base map, choose KML, set center lon/lat, render.
-- [ ] Download/share the result as **SVG** and as **PNG** (MediaStore or
+- [x] Simple controls: choose base map, choose KML, set center lon/lat, render.
+- [x] Download/share the result as **SVG** and as **PNG** (MediaStore or
       Storage Access Framework, plus the share sheet).
 
 ### Done when
 - A KML of country outlines shows correctly on the Blue Marble globe, centered
   anywhere, with nothing visible from the far side.
 - The exported SVG opens correctly in a browser and in Inkscape.
+
+Status: implemented. The globe-with-countries check (Natural Earth 1:110m, four
+centers including both poles) passes, and the SVG renders correctly in Chrome.
+The app has been confirmed working on a device. Opening the SVG in Inkscape is
+still to be checked.
 
 ## Milestone 2: More projections (v0.2)
 

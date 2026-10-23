@@ -21,8 +21,7 @@ class MainViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            // Opening the database here keeps the first screen from waiting on it.
-            baseMapRepository.count()
+            baseMapRepository.ensureBundled()
             _isReady.value = true
         }
     }

@@ -1,6 +1,33 @@
 <resources>
     <string name="app_name">Geo-Utils</string>
-    <string name="home_title">Geo-Utils</string>
-    <string name="home_tagline">Maps in any projection, from bitmaps and KML.</string>
-    <string name="home_base_maps">Base maps in library: %1$d</string>
+
+    <string name="export">Export</string>
+    <string name="export_save_svg">Save as SVG</string>
+    <string name="export_save_png">Save as PNG</string>
+    <string name="export_share_svg">Share SVG</string>
+    <string name="export_share_png">Share PNG</string>
+    <string name="share_title">Share map</string>
+
+    <string name="base_map">Base map</string>
+    <string name="base_map_none">None</string>
+    <string name="base_map_open_image">Open image…</string>
+    <string name="kml">KML overlay</string>
+    <string name="kml_open">Open KML…</string>
+    <string name="kml_remove">Remove</string>
+    <string name="kml_none">No KML loaded</string>
+    <plurals name="kml_summary">
+        <item quantity="one">%1$s · %2$d placemark</item>
+        <item quantity="other">%1$s · %2$d placemarks</item>
+    </plurals>
+    <string name="center_longitude">Center longitude: %1$.1f°</string>
+    <string name="center_latitude">Center latitude: %1$.1f°</string>
+    <string name="graticule">Graticule (30°)</string>
+    <string name="viewer_hint">Pinch to zoom, drag to move, double-tap to reset</string>
+
+    <string name="msg_saved">Map saved</string>
+    <string name="msg_export_failed">Export failed: %1$s</string>
+    <string name="msg_kml_failed">Could not read KML: %1$s</string>
+    <string name="msg_image_failed">Could not read image: %1$s</string>
+    <string name="msg_render_failed">Rendering failed: %1$s</string>
+    <string name="msg_not_equirectangular">This image is %1$d × %2$d, not 2:1. It will be stretched as if it covered the whole globe.</string>
 </resources>

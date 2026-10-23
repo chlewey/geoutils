@@ -67,9 +67,10 @@ net/interlecto/geoutils/
 
 ## Status
 
-Milestone 0 (project foundation) is in place: a single-activity app with a
-splash screen and a placeholder home screen. Next is the MVP, described
-in [ROADMAP.md](ROADMAP.md#milestone-1-mvp-v01).
+Milestone 1 (MVP) is implemented: open the bundled Blue Marble or your own
+equirectangular image, overlay a KML file, view it as an orthographic globe
+centered anywhere, zoom and pan, and save or share it as SVG or PNG. See
+[ROADMAP.md](ROADMAP.md) for what's next.
 
 ## Building
 
@@ -84,5 +85,9 @@ Requirements: JDK 17 and the Android SDK (platform 36).
 
 ## License
 
-To be decided. NASA Blue Marble imagery is public domain; attribution to
-NASA Earth Observatory is still requested.
+To be decided.
+
+The bundled base map is NASA's Blue Marble Next Generation (topography and
+bathymetry, December 2004), downsampled to 4096 × 2048. It's public domain;
+NASA Earth Observatory asks for credit, which the app shows with the map:
+<https://visibleearth.nasa.gov/images/73909>.

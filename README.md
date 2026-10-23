@@ -1,28 +1,76 @@
 # geoutils
 
-single activity app with a splash screen during load, room-ready, hilt-ready, that allow to manage kml files and other geographic data formats, and create maps in different projections. It should support image formats such as PNG, JPEG, WebP, vector formats as SVG for different functions such as:
- * input: plain orthoplane (equirectangular) projection, other possible projections, icons, overlays
- * output: maps at different scales and projection.
+An Android app for working with KML files and other geographic data, and for
+making maps in different projections.
 
-initial support should include (just output initially):
- * orthoplanal projection (input and output)
- * mercator (or web mercator, true mercator for later)
- * cylindrical equal-area (vg. Gall-Peters, Lambert, Behrmann, Hobo-Dyer)
- * central cylindrical
- * sinusoidal
- * mollweide
- * equal earth
- * goode homolosine
- * equidistant (azimutal)
- * lambert azimutal equiarea
+It's a single-activity app (Jetpack Compose) with a splash screen during
+loading, using Hilt for dependency injection and Room for local storage.
 
-Initial support will assume earth is a perfect sphere
- * allow coordinate system translations (v.g. changing center or chaning central great circle, i.e. equator)
- * allow define central great circle by two points
- * find shortest path between two points.
- * find rumb path between two points.
+See [ROADMAP.md](ROADMAP.md) for the planned milestones.
 
-what the inputs and outputs do.
- * input one (equirrectangular?) bitmap and project it.
- * input one kml file and produce an svg file with the projection.
- * combine both: bitmap + kml -> projected bitmap (with imposed forms) or projected vector (with embeded projected bitmap)
+## What it does
+
+- **Project a bitmap:** take an equirectangular base map (for example NASA's
+  Blue Marble) and reproject it.
+- **Project vector data:** take a KML file and produce an SVG of its geometry
+  in the chosen projection.
+- **Combine both:** base map + KML gives either
+  - a projected bitmap with the shapes drawn onto it, or
+  - a projected vector file (SVG) with the projected bitmap embedded.
+
+## Formats
+
+| Role   | Formats                                                                 |
+|--------|-------------------------------------------------------------------------|
+| Input  | Equirectangular bitmaps (PNG, JPEG, WebP), KML. Later: other projections, icons, overlays. |
+| Output | SVG, PNG, JPEG, WebP, at different scales and projections.             |
+
+## Projections
+
+Planned initial set (output first; input in equirectangular only):
+
+- Orthographic (globe view)
+- Equirectangular (plate carrée)
+- Mercator (web Mercator first; spherical "true" Mercator later)
+- Cylindrical equal-area (Lambert, Behrmann, Gall–Peters, Hobo–Dyer)
+- Central cylindrical
+- Sinusoidal
+- Mollweide
+- Equal Earth
+- Goode homolosine
+- Azimuthal equidistant
+- Lambert azimuthal equal-area
+
+## Spherical model and tools
+
+The first versions assume the Earth is a perfect sphere. On that basis the app
+will:
+
+- change the coordinate system, for example by moving the center point or
+  choosing a different central great circle (the "equator");
+- define the central great circle from two points;
+- find the shortest path (great circle) between two points;
+- find the rhumb line (loxodrome) between two points.
+
+## Project structure
+
+Base package: `net.interlecto.geoutils`
+
+```
+net/interlecto/geoutils/
+├── data/       Room database (entities, DAOs), JSON parsing, repositories
+├── domain/     domain objects (models)
+├── geometry/   project-specific math: spherical geometry, projections
+├── ui/         fragments, screens and other interface elements
+└── shared/     other extension libraries and helpers
+```
+
+## Status
+
+Early planning: there's no code yet. The MVP is described in
+[ROADMAP.md](ROADMAP.md#milestone-1-mvp-v01).
+
+## License
+
+To be decided. NASA Blue Marble imagery is public domain; attribution to
+NASA Earth Observatory is still requested.

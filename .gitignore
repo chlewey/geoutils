@@ -1,0 +1,51 @@
+.idea/
+.gradle/
+local.properties
+
+# Android/Gradle
+*.iml
+*.iws
+*.ipr
+.idea/
+.gradle/
+build/
+*/build/
+
+# Kotlin/Java
+*.class
+*.log
+*.ctxt
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Android generated
+*.apk
+*.ap_ 
+*.aab
+*.dex
+*.so
+
+# Local configuration
+/captures/
+.externalNativeBuild/
+.cxx/
+.kotlin/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# JetBrains
+/.idea/
+/.idea/**
+
+# Gradle wrapper credentials / caches
+.gradle/
+**/.gradle/
+
+# Misc
+*.orig

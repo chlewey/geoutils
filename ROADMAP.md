@@ -160,9 +160,9 @@ Mollweide, Equal Earth, Goode):
       it.
 
 Known issue (to fix in milestone 3): Goode homolosine is drawn through the
-generic rotation wrapper, so its interruptions move with the center, latitude
-and azimuth. That's wrong for an interrupted projection: its lobes and cuts
-are laid out for the continents and must stay tied to geography.
+generic rotation wrapper, so latitude and azimuth tilt the sphere under its
+lobes, which gives incoherent maps. Its lobes and cuts are laid out for the
+continents; only the central meridian may move them.
 
 Status: implemented. All 14 projections were checked visually with Blue Marble
 and Natural Earth countries, including oblique Mollweide and transverse
@@ -180,12 +180,22 @@ Goal: adding a projection is cheap, and any projection can be re-aimed.
       is interrupted, is azimuthal). The UI is generated from that description.
 - [ ] Set a new "equator" (central great circle) from **two points**, on top
       of the rotated coordinate system from milestone 2.
-- [ ] **Discontinuous (interrupted) projections are not rotated.** Goode
-      homolosine, and any future interrupted or otherwise discontinuous
-      projection, keeps its lobes and cuts fixed to geography instead of
-      going through the rotation wrapper. The registry marks these
-      projections, and the UI disables (or limits) center, latitude and
-      azimuth for them.
+- [ ] **Discontinuous (interrupted) projections don't use the standard
+      aspect parameters.** Goode homolosine, and any future interrupted or
+      otherwise discontinuous projection, declares its own tailored
+      parameters in the registry instead of the generic center/latitude/
+      azimuth:
+  - **Central meridian:** allowed; it turns the sphere about the polar axis,
+    so the whole map, lobes included, shifts with it.
+  - **Latitude and azimuth:** not available, since they give incoherent
+    results with lobes.
+  - **Orientation:** at most a toggle between 0° and 180° (north up or
+    south up). This turns the finished map in the plane, keeping the lobes
+    tied to geography; it does not rotate the sphere.
+  - **Goode's Greenland option:** the standard northern interruption at
+    40° W splits Greenland. Offer *divided* (standard), *extended* (the
+    western lobe extended east so Greenland is whole), or *both* (Greenland
+    whole in the extended lobe and also shown split).
 
 ### More projection families
 
@@ -220,6 +230,24 @@ Goal: keep and manage more than one base map.
 - [ ] Large-image handling: tiled or downsampled decoding so 8K–21K source images
       don't exhaust memory.
 
+### Places (center presets)
+
+- [ ] Room table of places: name, country, longitude, latitude, source
+      (bundled, user or downloaded).
+- [ ] Prefilled with an initial list, bundled as JSON in `assets/`: Moscow,
+      London, New York, Tokyo, Sydney, Johannesburg, Lagos, Dhaka, Mecca,
+      Buenos Aires.
+- [ ] "Center on…" menu next to the center controls: pick a place, search by
+      name. "My location" (GPS) sits at the top of the list as a place.
+- [ ] A place sets the center the same way GPS does:
+  - azimuthal projections: the place becomes the center (longitude and
+    latitude);
+  - cylindrical and pseudocylindrical projections: only the central
+    meridian (longitude); latitude and azimuth stay as they are (off by
+    default).
+- [ ] Add a place from the current center, or by typing a name and
+      coordinates; rename and delete user places.
+
 ## Milestone 5: Downloadable base maps (v0.5)
 
 Goal: get base maps from a catalog rather than bundling them.
@@ -231,6 +259,9 @@ Goal: get base maps from a catalog rather than bundling them.
       checksum verification.
 - [ ] Choice of resolution per entry, with a storage usage display.
 - [ ] Attribution and license shown per map and embedded in exported files.
+- [ ] Downloadable place lists (for example capitals, or all cities above a
+      population threshold, from GeoNames or Natural Earth populated places),
+      imported into the places table with their source and license.
 
 ## Milestone 6: Interactive maps (v1.0)
 

@@ -27,6 +27,7 @@ import net.interlecto.geoutils.data.displayName
 import net.interlecto.geoutils.data.export.MapExporter
 import net.interlecto.geoutils.data.image.RasterLoader
 import net.interlecto.geoutils.data.kml.KmlRepository
+import net.interlecto.geoutils.data.location.LocationProvider
 import net.interlecto.geoutils.data.repository.BaseMapRepository
 import net.interlecto.geoutils.domain.model.KmlDocument
 import net.interlecto.geoutils.domain.model.MapScene
@@ -49,20 +50,38 @@ data class MapUiState(
     val kmlFileName: String? = null,
     val kml: KmlDocument? = null,
     val center: GeoPoint = GeoPoint(-30.0, 20.0),
+    val azimuthMode: AzimuthMode = AzimuthMode.OFF,
+    /** Bearing that points up on the map, in [azimuthMode]'s range; 0 when off. */
+    val azimuth: Double = 0.0,
     val showGraticule: Boolean = true,
     val scene: MapScene? = null,
     val rendering: Boolean = false,
     val exporting: Boolean = false,
 ) {
-    val renderInput get() = RenderInput(source, kml, center, showGraticule)
+    val renderInput get() = RenderInput(source, kml, center, azimuth, showGraticule)
 }
 
 data class RenderInput(
     val source: MapSource?,
     val kml: KmlDocument?,
     val center: GeoPoint,
+    val azimuth: Double,
     val showGraticule: Boolean,
 )
+
+/** How the azimuth slider works: off (fixed at 0), or ranging over -180..180 or 0..360. */
+enum class AzimuthMode(val range: ClosedFloatingPointRange<Double>) {
+    OFF(-180.0..180.0),
+    SIGNED(-180.0..180.0),
+    FULL(0.0..360.0);
+
+    /** Brings [azimuth] into this mode's range; OFF always gives 0. */
+    fun normalize(azimuth: Double): Double = when (this) {
+        OFF -> 0.0
+        SIGNED -> (azimuth + 180.0).mod(360.0) - 180.0
+        FULL -> azimuth.mod(360.0)
+    }
+}
 
 sealed interface MapEvent {
     data class Message(@StringRes val text: Int, val args: List<Any> = emptyList()) : MapEvent
@@ -76,6 +95,7 @@ class MapViewModel @Inject constructor(
     private val rasterLoader: RasterLoader,
     private val kmlRepository: KmlRepository,
     private val exporter: MapExporter,
+    private val locationProvider: LocationProvider,
     @DefaultDispatcher private val cpu: CoroutineDispatcher,
 ) : ViewModel() {
 
@@ -88,6 +108,9 @@ class MapViewModel @Inject constructor(
     /** The decoded source image is large; keep only the current one. */
     private var cachedRaster: Pair<String, RasterImage>? = null
     private val rasterMutex = Mutex()
+
+    /** Once the user moves the center, a late location fix must not override it. */
+    private var centerChosen = false
 
     init {
         viewModelScope.launch {
@@ -136,7 +159,23 @@ class MapViewModel @Inject constructor(
 
     fun removeKml() = _state.update { it.copy(kml = null, kmlFileName = null) }
 
-    fun setCenter(lon: Double, lat: Double) = _state.update { it.copy(center = GeoPoint(lon, lat)) }
+    fun setCenter(lon: Double, lat: Double) {
+        centerChosen = true
+        _state.update { it.copy(center = GeoPoint(lon, lat)) }
+    }
+
+    /** Centers the globe on the device's location, if permitted and known. */
+    fun centerOnDeviceLocation() {
+        viewModelScope.launch {
+            val here = locationProvider.current() ?: return@launch
+            if (!centerChosen) _state.update { it.copy(center = here) }
+        }
+    }
+
+    fun setAzimuth(degrees: Double) = _state.update { it.copy(azimuth = it.azimuthMode.normalize(degrees)) }
+
+    fun setAzimuthMode(mode: AzimuthMode) =
+        _state.update { it.copy(azimuthMode = mode, azimuth = mode.normalize(it.azimuth)) }
 
     fun setGraticule(show: Boolean) = _state.update { it.copy(showGraticule = show) }
 
@@ -154,7 +193,8 @@ class MapViewModel @Inject constructor(
     fun exportTitle(): String {
         val s = state.value
         val base = s.kmlFileName?.substringBeforeLast('.') ?: s.source?.name ?: "map"
-        return "$base-ortho-%.0f_%.0f".format(Locale.ROOT, s.center.lon, s.center.lat)
+        val azimuth = if (s.azimuth != 0.0) "_az%.0f".format(Locale.ROOT, s.azimuth) else ""
+        return "$base-ortho-%.0f_%.0f".format(Locale.ROOT, s.center.lon, s.center.lat) + azimuth
     }
 
     private suspend fun render(input: RenderInput) {
@@ -175,7 +215,7 @@ class MapViewModel @Inject constructor(
         val raster = input.source?.let { raster(it.uri) }
         return withContext(cpu) {
             SceneBuilder.build(
-                projection = Orthographic(input.center),
+                projection = Orthographic(input.center, input.azimuth),
                 size = size,
                 baseMap = raster,
                 kml = input.kml,

@@ -21,6 +21,10 @@
     </plurals>
     <string name="center_longitude">Center longitude: %1$.1f°</string>
     <string name="center_latitude">Center latitude: %1$.1f°</string>
+    <string name="azimuth">Azimuth (up): %1$.1f°</string>
+    <string name="azimuth_off">Off</string>
+    <string name="azimuth_signed">±180°</string>
+    <string name="azimuth_full">0–360°</string>
     <string name="graticule">Graticule (30°)</string>
     <string name="viewer_hint">Pinch to zoom, drag to move, double-tap to reset</string>
 

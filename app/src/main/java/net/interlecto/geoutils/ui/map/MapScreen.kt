@@ -1,6 +1,8 @@
 package net.interlecto.geoutils.ui.map
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -25,6 +27,9 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -39,6 +44,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +55,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.interlecto.geoutils.R
@@ -78,6 +85,24 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
                     context.startActivity(Intent.createChooser(send, resources.getString(R.string.share_title)))
                 }
             }
+        }
+    }
+
+    // Ask for location once per screen instance (not again after rotation);
+    // when granted, the globe starts centered on the device.
+    var locationAsked by rememberSaveable { mutableStateOf(false) }
+    val requestLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) viewModel.centerOnDeviceLocation()
+    }
+    LaunchedEffect(Unit) {
+        if (locationAsked) return@LaunchedEffect
+        locationAsked = true
+        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+        if (granted) {
+            viewModel.centerOnDeviceLocation()
+        } else {
+            requestLocation.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
         }
     }
 
@@ -132,6 +157,8 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
                 onOpenKml = { openKml.launch(arrayOf("*/*")) },
                 onRemoveKml = viewModel::removeKml,
                 onCenterChange = viewModel::setCenter,
+                onAzimuthModeChange = viewModel::setAzimuthMode,
+                onAzimuthChange = viewModel::setAzimuth,
                 onGraticuleChange = viewModel::setGraticule,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -183,6 +210,8 @@ private fun Controls(
     onOpenKml: () -> Unit,
     onRemoveKml: () -> Unit,
     onCenterChange: (Double, Double) -> Unit,
+    onAzimuthModeChange: (AzimuthMode) -> Unit,
+    onAzimuthChange: (Double) -> Unit,
     onGraticuleChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -211,6 +240,7 @@ private fun Controls(
         )
 
         CenterSliders(state.center.lon, state.center.lat, onCenterChange)
+        AzimuthControl(state.azimuthMode, state.azimuth, onAzimuthModeChange, onAzimuthChange)
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.graticule), Modifier.weight(1f))
@@ -272,6 +302,50 @@ private fun CenterSliders(lon: Double, lat: Double, onChange: (Double, Double) -
         onValueChange = { dragLat = it },
         onValueChangeFinished = { onChange(dragLon.toDouble(), dragLat.toDouble()) },
         valueRange = -90f..90f,
+    )
+}
+
+/**
+ * Azimuth slider with a mode selector: Off grays the slider out and fixes the
+ * azimuth at 0; the other modes set the slider's range.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AzimuthControl(
+    mode: AzimuthMode,
+    azimuth: Double,
+    onModeChange: (AzimuthMode) -> Unit,
+    onAzimuthChange: (Double) -> Unit,
+) {
+    val enabled = mode != AzimuthMode.OFF
+    var drag by remember(azimuth, mode) { mutableFloatStateOf(azimuth.toFloat()) }
+    Text(
+        stringResource(R.string.azimuth, drag),
+        style = MaterialTheme.typography.bodyMedium,
+        color = if (enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+    )
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        val labels = mapOf(
+            AzimuthMode.OFF to R.string.azimuth_off,
+            AzimuthMode.SIGNED to R.string.azimuth_signed,
+            AzimuthMode.FULL to R.string.azimuth_full,
+        )
+        AzimuthMode.entries.forEachIndexed { index, m ->
+            SegmentedButton(
+                selected = m == mode,
+                onClick = { onModeChange(m) },
+                shape = SegmentedButtonDefaults.itemShape(index, AzimuthMode.entries.size),
+            ) {
+                Text(stringResource(labels.getValue(m)))
+            }
+        }
+    }
+    Slider(
+        value = drag,
+        onValueChange = { drag = it },
+        onValueChangeFinished = { onAzimuthChange(drag.toDouble()) },
+        valueRange = mode.range.start.toFloat()..mode.range.endInclusive.toFloat(),
+        enabled = enabled,
     )
 }
 

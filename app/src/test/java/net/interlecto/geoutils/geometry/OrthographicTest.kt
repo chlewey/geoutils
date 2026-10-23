@@ -45,6 +45,40 @@ class OrthographicTest {
     }
 
     @Test
+    fun azimuthPointsTheGivenBearingUp() {
+        // Azimuth 90: east is up and north points left.
+        val east = Orthographic(GeoPoint(0.0, 0.0), azimuthDeg = 90.0)
+        assertVec(Vec2(0.0, 1.0), east.forward(GeoPoint(90.0, 0.0))!!)
+        assertVec(Vec2(-1.0, 0.0), east.forward(GeoPoint(0.0, 90.0))!!)
+
+        // Azimuth 180 and -180 both turn the map upside down.
+        for (azimuth in listOf(180.0, -180.0)) {
+            val south = Orthographic(GeoPoint(0.0, 0.0), azimuthDeg = azimuth)
+            assertVec(Vec2(0.0, -1.0), south.forward(GeoPoint(0.0, 90.0))!!)
+            assertVec(Vec2(-1.0, 0.0), south.forward(GeoPoint(90.0, 0.0))!!)
+        }
+    }
+
+    @Test
+    fun azimuthIsPeriodic() {
+        val a = Orthographic(GeoPoint(-74.0, 4.6), azimuthDeg = 270.0).forward(GeoPoint(-60.0, 20.0))!!
+        val b = Orthographic(GeoPoint(-74.0, 4.6), azimuthDeg = -90.0).forward(GeoPoint(-60.0, 20.0))!!
+        assertVec(a, b)
+    }
+
+    @Test
+    fun azimuthKeepsVisibilityAndDistanceFromCenter() {
+        val plain = Orthographic(GeoPoint(30.0, 45.0))
+        val turned = Orthographic(GeoPoint(30.0, 45.0), azimuthDeg = 37.0)
+        val g = GeoPoint(50.0, 30.0)
+        val p = plain.forward(g)!!
+        val q = turned.forward(g)!!
+        assertEquals(hypot(p.x, p.y), hypot(q.x, q.y), eps)
+        assertEquals(37.0, Math.toDegrees(atan2(q.y, q.x) - atan2(p.y, p.x)), 1e-9)
+        assertNull(turned.forward(GeoPoint(-150.0, -45.0)))
+    }
+
+    @Test
     fun farSideIsHidden() {
         val ortho = Orthographic(GeoPoint(10.0, 20.0))
         assertNull(ortho.forward(GeoPoint(-170.0, -20.0)))
@@ -61,7 +95,7 @@ class OrthographicTest {
         val random = Random(42)
         repeat(20) {
             val center = GeoPoint(random.nextDouble(-180.0, 180.0), random.nextDouble(-90.0, 90.0))
-            val ortho = Orthographic(center)
+            val ortho = Orthographic(center, azimuthDeg = random.nextDouble(-180.0, 360.0))
             repeat(200) {
                 val g = GeoPoint(random.nextDouble(-180.0, 180.0), random.nextDouble(-89.0, 89.0))
                 val p = ortho.forward(g) ?: return@repeat

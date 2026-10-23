@@ -78,6 +78,9 @@ and download the result.**
       Draw the same scene to a Compose `Canvas` rather than re-rendering the SVG
       for display.
 - [x] Simple controls: choose base map, choose KML, set center lon/lat, render.
+- [x] Azimuth (rotation around the view axis) with an Off / ±180° / 0–360°
+      selector; off by default.
+- [x] With location permission (approximate), start centered on the device.
 - [x] Download/share the result as **SVG** and as **PNG** (MediaStore or
       Storage Access Framework, plus the share sheet).
 
@@ -110,6 +113,44 @@ Goal: cover the projections listed in the README, all through the same
 - [ ] Lambert azimuthal equal-area.
 - [ ] General antimeridian/boundary cutting for cylindrical and pseudocylindrical maps.
 - [ ] Projection picker in the UI with per-projection parameters.
+
+### Aspect: center and orientation
+
+Every projection is drawn in a **rotated coordinate system**. The user's
+center (lon₀, lat₀) and azimuth α are moved to (0°, 0°) with north up, and
+the projection's normal formulas then run in the new system:
+
+- Build the frame at the center: c = the center as a unit vector, u = the
+  direction of bearing α at c, and r = u × c (pointing right). This is the
+  same frame `Orthographic` already uses for its center and azimuth.
+- A point p on the sphere becomes p′ = (p·c, p·r, p·u), so its rotated
+  coordinates are lon′ = atan2(p·r, p·c) and lat′ = asin(p·u).
+- Project (lon′, lat′) with the normal-aspect formulas. For the inverse,
+  apply the inverse projection, then p = x′·c + y′·r + z′·u.
+- Cutting and clipping (antimeridian, interruptions, map boundary) happen in
+  the rotated system, so the cut follows the meridian opposite the new center.
+- This is one generic wrapper around any normal-aspect projection. The
+  orthographic projection becomes an instance of it.
+
+Defaults and controls for **cylindrical and pseudocylindrical** projections
+(Mercator, equal-area cylindricals, central cylindrical, sinusoidal,
+Mollweide, Equal Earth, Goode):
+
+- [ ] Initial center longitude chosen per projection: 10° E (keeps the
+      antimeridian cut away from land, at the Bering Strait), 0°, or the
+      user's own longitude.
+- [ ] Initial center latitude 0° and azimuth 0° (normal aspect).
+- [ ] The latitude and azimuth controls start **grayed out** (off, fixed at
+      0°), like the orthographic azimuth control. Only the longitude is
+      active.
+- [ ] When the user turns latitude or azimuth on and changes it, the map
+      switches to an **oblique aspect**: the sphere is rotated so the chosen
+      (lon, lat, azimuth) is at the center of the image, then projected as
+      above. For example, a Mercator with azimuth 90° is a transverse
+      Mercator.
+- [ ] Tests: a rotated projection with lat₀ = 0 and α = 0 equals the normal
+      one shifted by lon₀; the rotated Orthographic matches the current one;
+      forward/inverse round trips hold in oblique aspects.
 - [ ] Round-trip tests (forward then inverse) and reference-point tests for each
       projection.
 
@@ -120,10 +161,8 @@ Goal: adding a projection is cheap, and any projection can be re-aimed.
 - [ ] Projection registry: each projection declares an id, display name,
       parameters (with ranges and defaults) and capabilities (has an inverse,
       is interrupted, is azimuthal). The UI is generated from that description.
-- [ ] Oblique/transverse aspects: rotate the sphere before projecting, so every
-      projection gets a configurable center and orientation.
-  - [ ] Set a new center point (lon₀, lat₀) and rotation.
-  - [ ] Set a new "equator" (central great circle) from **two points**.
+- [ ] Set a new "equator" (central great circle) from **two points**, on top
+      of the rotated coordinate system from milestone 2.
 - [ ] Geodesy tools in `geometry`, drawable as overlays:
   - [ ] Great-circle (shortest) path and distance between two points.
   - [ ] Rhumb line (loxodrome) and distance between two points.
@@ -185,3 +224,8 @@ panning a fixed image.
   them to equirectangular first).
 - Tissot indicatrix and distortion heatmaps.
 - Scale bar and printable map layouts.
+- Initial center without location permission: when location is denied, center
+  on the user's country instead. Take the country from the mobile network or
+  SIM (`TelephonyManager.networkCountryIso`, no permission needed), falling
+  back to the locale's region. Map it to a center point with a small bundled
+  table of country centroids (about 250 rows, a few KB of JSON in `assets/`).

@@ -14,33 +14,42 @@ import kotlin.math.sqrt
  * at [center]. Only the hemisphere facing the viewer is drawn; the map is the
  * unit disk.
  *
- * Internally a point p on the sphere maps to (p·east, p·north), where east,
- * north and the view axis form an orthonormal frame at [center]. A point is
- * visible when p·axis ≥ 0.
+ * [azimuthDeg] turns the view around its axis: it is the bearing, clockwise
+ * from north, that points up on the map. At 0 north is up; at 90 east is up
+ * and north points left.
+ *
+ * Internally a point p on the sphere maps to (p·right, p·up), where right, up
+ * and the view axis form an orthonormal frame at [center]. A point is visible
+ * when p·axis ≥ 0.
  */
-class Orthographic(val center: GeoPoint) : Projection {
-
-    private val lambda0 = Math.toRadians(center.lon)
-    private val phi0 = Math.toRadians(center.lat)
-    private val sinPhi0 = sin(phi0)
-    private val cosPhi0 = cos(phi0)
+class Orthographic(val center: GeoPoint, val azimuthDeg: Double = 0.0) : Projection {
 
     private val axis = center.toVec3()
-    private val east = Vec3(-sin(lambda0), cos(lambda0), 0.0)
-    private val north = Vec3(-sinPhi0 * cos(lambda0), -sinPhi0 * sin(lambda0), cosPhi0)
+    private val right: Vec3
+    private val up: Vec3
+
+    init {
+        val lambda0 = Math.toRadians(center.lon)
+        val phi0 = Math.toRadians(center.lat)
+        val east = Vec3(-sin(lambda0), cos(lambda0), 0.0)
+        val north = Vec3(-sin(phi0) * cos(lambda0), -sin(phi0) * sin(lambda0), cos(phi0))
+        val a = Math.toRadians(azimuthDeg)
+        up = north * cos(a) + east * sin(a)
+        right = east * cos(a) - north * sin(a)
+    }
 
     override val bounds = Bounds(-1.0, -1.0, 1.0, 1.0)
 
     override fun forward(lon: Double, lat: Double, out: DoubleArray): Boolean {
-        val dLambda = Math.toRadians(lon) - lambda0
+        val lambda = Math.toRadians(lon)
         val phi = Math.toRadians(lat)
-        val sinPhi = sin(phi)
         val cosPhi = cos(phi)
-        val cosDLambda = cos(dLambda)
-        val cosC = sinPhi0 * sinPhi + cosPhi0 * cosPhi * cosDLambda
-        if (cosC < 0) return false
-        out[0] = cosPhi * sin(dLambda)
-        out[1] = cosPhi0 * sinPhi - sinPhi0 * cosPhi * cosDLambda
+        val px = cosPhi * cos(lambda)
+        val py = cosPhi * sin(lambda)
+        val pz = sin(phi)
+        if (px * axis.x + py * axis.y + pz * axis.z < 0) return false
+        out[0] = px * right.x + py * right.y + pz * right.z
+        out[1] = px * up.x + py * up.y + pz * up.z
         return true
     }
 
@@ -48,10 +57,10 @@ class Orthographic(val center: GeoPoint) : Projection {
         val rho2 = x * x + y * y
         if (rho2 > 1.0) return false
         val z = sqrt(1.0 - rho2)
-        // p = x·east + y·north + z·axis, then back to lon/lat.
-        val px = x * east.x + y * north.x + z * axis.x
-        val py = x * east.y + y * north.y + z * axis.y
-        val pz = x * east.z + y * north.z + z * axis.z
+        // p = x·right + y·up + z·axis, then back to lon/lat.
+        val px = x * right.x + y * up.x + z * axis.x
+        val py = x * right.y + y * up.y + z * axis.y
+        val pz = x * right.z + y * up.z + z * axis.z
         out[0] = Math.toDegrees(atan2(py, px))
         out[1] = Math.toDegrees(asin(pz.coerceIn(-1.0, 1.0)))
         return true
@@ -132,7 +141,7 @@ class Orthographic(val center: GeoPoint) : Projection {
 
     private fun isVisible(p: Vec3): Boolean = (p dot axis) >= 0
 
-    private fun toPlane(p: Vec3) = Vec2(p dot east, p dot north)
+    private fun toPlane(p: Vec3) = Vec2(p dot right, p dot up)
 
     /** Point where the short great-circle arc from [a] (visible) to [b] (hidden), or back, meets the horizon. */
     private fun horizonCrossing(a: Vec3, b: Vec3): Vec3 {

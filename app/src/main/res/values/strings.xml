@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Geo-Utils</string>
+    <string name="home_title">Geo-Utils</string>
+    <string name="home_tagline">Maps in any projection, from bitmaps and KML.</string>
+    <string name="home_base_maps">Base maps in library: %1$d</string>
+</resources>

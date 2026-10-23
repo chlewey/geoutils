@@ -49,3 +49,10 @@ Thumbs.db
 
 # Misc
 *.orig
+
+# JVM crash logs
+hs_err_pid*.log
+replay_pid*.log
+
+# Gradle wrapper must be committed
+!gradle/wrapper/gradle-wrapper.jar

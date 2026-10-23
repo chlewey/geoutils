@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A globe with a graticule: the outline, the equator, a central meridian and
+     two elliptical meridians, as seen in an orthographic projection. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/land"
+        android:pathData="M54,30a24,24 0,1 1,0 48a24,24 0,1 1,0 -48z" />
+    <path
+        android:strokeColor="@color/ice"
+        android:strokeWidth="2"
+        android:pathData="M54,30a24,24 0,1 1,0 48a24,24 0,1 1,0 -48z
+            M30,54h48
+            M54,30v48
+            M54,30a12,24 0,1 1,0 48a12,24 0,1 1,0 -48z
+            M33.2,42h41.6
+            M33.2,66h41.6" />
+</vector>

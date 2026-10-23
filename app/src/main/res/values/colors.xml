@@ -1,0 +1,5 @@
+<resources>
+    <color name="ocean">#FF0B3D66</color>
+    <color name="land">#FF5FA36A</color>
+    <color name="ice">#FFEAF2F8</color>
+</resources>

@@ -1,6 +1,6 @@
-# geoutils Roadmap
+# Geo-Utils Roadmap
 
-This roadmap starts with a small, end-to-end MVP and grows it in stages. Each
+This roadmap for Geo-Utils starts with a small, end-to-end MVP and grows it in stages. Each
 milestone should leave the app shippable. Where a later milestone affects
 early design choices, the MVP notes say so, so the MVP doesn't need to be
 rewritten later.
@@ -20,20 +20,23 @@ Conventions used throughout:
 
 Goal: an empty but well-structured app that later milestones can build on.
 
-- [ ] Gradle (Kotlin DSL) project with a version catalog; minSdk/targetSdk chosen.
-- [ ] Single-activity app with Jetpack Compose and Navigation.
-- [ ] Splash screen (`androidx.core:core-splashscreen`) shown while assets load.
-- [ ] Hilt wired up (application class, a first module).
-- [ ] Room wired up (empty database, migration strategy decided), even if the
-      MVP doesn't need it yet.
-- [ ] Package layout under `net.interlecto.geoutils` (see the README):
+- [x] Gradle (Kotlin DSL) project with a version catalog: AGP 9.0, Kotlin 2.3,
+      Gradle 9.1, minSdk 26, targetSdk/compileSdk 36.
+- [x] Single-activity app with Jetpack Compose and type-safe Navigation.
+- [x] Splash screen (`androidx.core:core-splashscreen`) shown until startup
+      work finishes.
+- [x] Hilt wired up (application class, database and coroutine modules).
+- [x] Room wired up: a `base_maps` table, schemas exported to `app/schemas`,
+      and no destructive migrations.
+- [x] Package layout under `net.interlecto.geoutils` (see the README):
   - `data`: Room, JSON, KML parsing, repositories.
   - `domain`: domain objects.
   - `geometry`: spherical math, projections, raster reprojection, SVG writer.
     Kept free of Android dependencies.
   - `ui`: fragments, screens, viewer.
   - `shared`: other extension libraries.
-- [ ] JVM unit tests for `geometry` and `data` parsing; CI runs build, lint and tests.
+- [x] JVM unit tests (starting with `geometry`); GitHub Actions CI runs build,
+      lint and tests.
 
 ## Milestone 1: MVP (v0.1)
 

@@ -1,4 +1,4 @@
-# geoutils
+# Geo-Utils
 
 An Android app for working with KML files and other geographic data, and for
 making maps in different projections.
@@ -67,8 +67,20 @@ net/interlecto/geoutils/
 
 ## Status
 
-Early planning: there's no code yet. The MVP is described in
-[ROADMAP.md](ROADMAP.md#milestone-1-mvp-v01).
+Milestone 0 (project foundation) is in place: a single-activity app with a
+splash screen and a placeholder home screen. Next is the MVP, described
+in [ROADMAP.md](ROADMAP.md#milestone-1-mvp-v01).
+
+## Building
+
+Requirements: JDK 17 and the Android SDK (platform 36).
+
+```sh
+./gradlew assembleDebug        # build the debug APK
+./gradlew testDebugUnitTest    # JVM unit tests
+./gradlew lintDebug            # Android lint
+./gradlew installDebug         # install on a connected device
+```
 
 ## License
 

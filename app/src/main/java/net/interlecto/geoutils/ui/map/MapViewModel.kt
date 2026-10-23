@@ -33,7 +33,8 @@ import net.interlecto.geoutils.domain.model.KmlDocument
 import net.interlecto.geoutils.domain.model.MapScene
 import net.interlecto.geoutils.domain.render.SceneBuilder
 import net.interlecto.geoutils.geometry.GeoPoint
-import net.interlecto.geoutils.geometry.Orthographic
+import net.interlecto.geoutils.geometry.ProjectionCatalog
+import net.interlecto.geoutils.geometry.ProjectionType
 import net.interlecto.geoutils.geometry.RasterImage
 import net.interlecto.geoutils.shared.di.DefaultDispatcher
 import java.util.Locale
@@ -49,39 +50,31 @@ data class MapUiState(
     val source: MapSource? = null,
     val kmlFileName: String? = null,
     val kml: KmlDocument? = null,
-    val center: GeoPoint = GeoPoint(-30.0, 20.0),
-    val azimuthMode: AzimuthMode = AzimuthMode.OFF,
-    /** Bearing that points up on the map, in [azimuthMode]'s range; 0 when off. */
-    val azimuth: Double = 0.0,
+    val projectionId: String = ProjectionCatalog.ORTHOGRAPHIC.id,
+    /** Views the user has changed, by projection id; others use [ViewSettings.defaultFor]. */
+    val views: Map<String, ViewSettings> = emptyMap(),
+    val deviceLocation: GeoPoint? = null,
     val showGraticule: Boolean = true,
     val scene: MapScene? = null,
     val rendering: Boolean = false,
     val exporting: Boolean = false,
 ) {
-    val renderInput get() = RenderInput(source, kml, center, azimuth, showGraticule)
+    val projectionType: ProjectionType get() = ProjectionCatalog.byId(projectionId)
+
+    val view: ViewSettings get() = views[projectionId] ?: ViewSettings.defaultFor(projectionType, deviceLocation)
+
+    val renderInput
+        get() = RenderInput(source, kml, projectionType, view.center, view.effectiveAzimuth, showGraticule)
 }
 
 data class RenderInput(
     val source: MapSource?,
     val kml: KmlDocument?,
+    val projection: ProjectionType,
     val center: GeoPoint,
     val azimuth: Double,
     val showGraticule: Boolean,
 )
-
-/** How the azimuth slider works: off (fixed at 0), or ranging over -180..180 or 0..360. */
-enum class AzimuthMode(val range: ClosedFloatingPointRange<Double>) {
-    OFF(-180.0..180.0),
-    SIGNED(-180.0..180.0),
-    FULL(0.0..360.0);
-
-    /** Brings [azimuth] into this mode's range; OFF always gives 0. */
-    fun normalize(azimuth: Double): Double = when (this) {
-        OFF -> 0.0
-        SIGNED -> (azimuth + 180.0).mod(360.0) - 180.0
-        FULL -> azimuth.mod(360.0)
-    }
-}
 
 sealed interface MapEvent {
     data class Message(@StringRes val text: Int, val args: List<Any> = emptyList()) : MapEvent
@@ -108,9 +101,6 @@ class MapViewModel @Inject constructor(
     /** The decoded source image is large; keep only the current one. */
     private var cachedRaster: Pair<String, RasterImage>? = null
     private val rasterMutex = Mutex()
-
-    /** Once the user moves the center, a late location fix must not override it. */
-    private var centerChosen = false
 
     init {
         viewModelScope.launch {
@@ -159,23 +149,35 @@ class MapViewModel @Inject constructor(
 
     fun removeKml() = _state.update { it.copy(kml = null, kmlFileName = null) }
 
-    fun setCenter(lon: Double, lat: Double) {
-        centerChosen = true
-        _state.update { it.copy(center = GeoPoint(lon, lat)) }
-    }
+    fun selectProjection(id: String) = _state.update { it.copy(projectionId = id) }
 
-    /** Centers the globe on the device's location, if permitted and known. */
+    fun setCenter(lon: Double, lat: Double) = updateView { it.copy(longitude = lon, latitude = lat) }
+
+    fun setLongitude(lon: Double) = updateView { it.copy(longitude = lon) }
+
+    /** Turning latitude off returns it to 0 (normal aspect). */
+    fun setLatitudeEnabled(enabled: Boolean) =
+        updateView { it.copy(latitudeEnabled = enabled, latitude = if (enabled) it.latitude else 0.0) }
+
+    fun setAzimuth(degrees: Double) = updateView { it.copy(azimuth = it.azimuthMode.normalize(degrees)) }
+
+    fun setAzimuthMode(mode: AzimuthMode) =
+        updateView { it.copy(azimuthMode = mode, azimuth = mode.normalize(it.azimuth)) }
+
+    /**
+     * Looks up the device location. Views the user hasn't changed (azimuthal
+     * ones start there) follow it; changed views keep their center.
+     */
     fun centerOnDeviceLocation() {
         viewModelScope.launch {
             val here = locationProvider.current() ?: return@launch
-            if (!centerChosen) _state.update { it.copy(center = here) }
+            _state.update { it.copy(deviceLocation = here) }
         }
     }
 
-    fun setAzimuth(degrees: Double) = _state.update { it.copy(azimuth = it.azimuthMode.normalize(degrees)) }
-
-    fun setAzimuthMode(mode: AzimuthMode) =
-        _state.update { it.copy(azimuthMode = mode, azimuth = mode.normalize(it.azimuth)) }
+    /** Changes the current projection's view, which from then on is kept as the user left it. */
+    private fun updateView(change: (ViewSettings) -> ViewSettings) =
+        _state.update { it.copy(views = it.views + (it.projectionId to change(it.view))) }
 
     fun setGraticule(show: Boolean) = _state.update { it.copy(showGraticule = show) }
 
@@ -193,8 +195,9 @@ class MapViewModel @Inject constructor(
     fun exportTitle(): String {
         val s = state.value
         val base = s.kmlFileName?.substringBeforeLast('.') ?: s.source?.name ?: "map"
-        val azimuth = if (s.azimuth != 0.0) "_az%.0f".format(Locale.ROOT, s.azimuth) else ""
-        return "$base-ortho-%.0f_%.0f".format(Locale.ROOT, s.center.lon, s.center.lat) + azimuth
+        val view = s.view
+        val azimuth = if (view.effectiveAzimuth != 0.0) "_az%.0f".format(Locale.ROOT, view.effectiveAzimuth) else ""
+        return "$base-${s.projectionId}-%.0f_%.0f".format(Locale.ROOT, view.center.lon, view.center.lat) + azimuth
     }
 
     private suspend fun render(input: RenderInput) {
@@ -215,7 +218,7 @@ class MapViewModel @Inject constructor(
         val raster = input.source?.let { raster(it.uri) }
         return withContext(cpu) {
             SceneBuilder.build(
-                projection = Orthographic(input.center, input.azimuth),
+                projection = input.projection.create(input.center, input.azimuth),
                 size = size,
                 baseMap = raster,
                 kml = input.kml,

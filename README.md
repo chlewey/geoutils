@@ -27,19 +27,19 @@ See [ROADMAP.md](ROADMAP.md) for the planned milestones.
 
 ## Projections
 
-Planned initial set (output first; input in equirectangular only):
+Output projections (input bitmaps are equirectangular):
 
-- Orthographic (globe view)
-- Equirectangular (plate carrée)
-- Mercator (web Mercator first; spherical "true" Mercator later)
-- Cylindrical equal-area (Lambert, Behrmann, Gall–Peters, Hobo–Dyer)
-- Central cylindrical
-- Sinusoidal
-- Mollweide
-- Equal Earth
-- Goode homolosine
-- Azimuthal equidistant
-- Lambert azimuthal equal-area
+- **Azimuthal:** orthographic (globe view), azimuthal equidistant, Lambert
+  azimuthal equal-area
+- **Cylindrical:** equirectangular (plate carrée), Mercator, cylindrical
+  equal-area (Lambert, Behrmann, Hobo–Dyer, Gall–Peters), central cylindrical
+- **Pseudocylindrical:** sinusoidal, Mollweide, Equal Earth, Goode homolosine
+
+Every projection can be aimed at any center and turned by an azimuth: the
+sphere is rotated so the chosen point is at the middle of the map, then
+projected. Cylindrical and pseudocylindrical maps start in the normal aspect
+(latitude and azimuth off); turning those on gives oblique and transverse
+aspects.
 
 ## Spherical model and tools
 
@@ -67,9 +67,11 @@ net/interlecto/geoutils/
 
 ## Status
 
-Milestone 1 (MVP) is implemented: open the bundled Blue Marble or your own
-equirectangular image, overlay a KML file, view it as an orthographic globe
-centered anywhere, zoom and pan, and save or share it as SVG or PNG. See
+Milestones 1 and 2 are implemented. Open the bundled Blue Marble or your own
+equirectangular image and overlay a KML file. Project them in any of 14
+projections (orthographic, azimuthal, cylindrical and pseudocylindrical),
+aimed at any center and azimuth, including oblique and transverse aspects.
+Zoom and pan, and save or share the result as SVG or PNG. See
 [ROADMAP.md](ROADMAP.md) for what's next.
 
 ## Building

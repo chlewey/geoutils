@@ -22,6 +22,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -60,6 +61,10 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.interlecto.geoutils.R
 import net.interlecto.geoutils.data.export.MapExporter.Format
+import net.interlecto.geoutils.geometry.GeoPoint
+import net.interlecto.geoutils.geometry.ProjectionCatalog
+import net.interlecto.geoutils.geometry.ProjectionFamily
+import net.interlecto.geoutils.geometry.ProjectionType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -156,7 +161,10 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
                 onOpenImage = { openImage.launch(arrayOf("image/*")) },
                 onOpenKml = { openKml.launch(arrayOf("*/*")) },
                 onRemoveKml = viewModel::removeKml,
+                onSelectProjection = viewModel::selectProjection,
                 onCenterChange = viewModel::setCenter,
+                onLongitudeChange = viewModel::setLongitude,
+                onLatitudeEnabledChange = viewModel::setLatitudeEnabled,
                 onAzimuthModeChange = viewModel::setAzimuthMode,
                 onAzimuthChange = viewModel::setAzimuth,
                 onGraticuleChange = viewModel::setGraticule,
@@ -209,7 +217,10 @@ private fun Controls(
     onOpenImage: () -> Unit,
     onOpenKml: () -> Unit,
     onRemoveKml: () -> Unit,
+    onSelectProjection: (String) -> Unit,
     onCenterChange: (Double, Double) -> Unit,
+    onLongitudeChange: (Double) -> Unit,
+    onLatitudeEnabledChange: (Boolean) -> Unit,
     onAzimuthModeChange: (AzimuthMode) -> Unit,
     onAzimuthChange: (Double) -> Unit,
     onGraticuleChange: (Boolean) -> Unit,
@@ -239,8 +250,18 @@ private fun Controls(
             overflow = TextOverflow.Ellipsis,
         )
 
-        CenterSliders(state.center.lon, state.center.lat, onCenterChange)
-        AzimuthControl(state.azimuthMode, state.azimuth, onAzimuthModeChange, onAzimuthChange)
+        Spacer(Modifier.padding(top = 4.dp))
+        Label(stringResource(R.string.projection))
+        ProjectionPicker(state.projectionType, onSelectProjection)
+        CenterControls(
+            view = state.view,
+            wholeSphere = state.projectionType.family != ProjectionFamily.AZIMUTHAL,
+            deviceLocation = state.deviceLocation,
+            onCenterChange = onCenterChange,
+            onLongitudeChange = onLongitudeChange,
+            onLatitudeEnabledChange = onLatitudeEnabledChange,
+        )
+        AzimuthControl(state.view.azimuthMode, state.view.azimuth, onAzimuthModeChange, onAzimuthChange)
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.graticule), Modifier.weight(1f))
@@ -284,24 +305,97 @@ private fun SourcePicker(state: MapUiState, onSelect: (MapSource?) -> Unit, onOp
     }
 }
 
-/** Sliders show the value while dragging and only re-render when released. */
 @Composable
-private fun CenterSliders(lon: Double, lat: Double, onChange: (Double, Double) -> Unit) {
-    var dragLon by remember(lon) { mutableFloatStateOf(lon.toFloat()) }
-    var dragLat by remember(lat) { mutableFloatStateOf(lat.toFloat()) }
+private fun ProjectionPicker(current: ProjectionType, onSelect: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        OutlinedButton(onClick = { expanded = true }) { Text(current.displayName) }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            for ((family, types) in ProjectionCatalog.all.groupBy { it.family }) {
+                Text(
+                    stringResource(familyLabel(family)),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+                for (type in types) {
+                    DropdownMenuItem(text = { Text(type.displayName) }, onClick = {
+                        expanded = false
+                        onSelect(type.id)
+                    })
+                }
+            }
+        }
+    }
+}
+
+private fun familyLabel(family: ProjectionFamily) = when (family) {
+    ProjectionFamily.AZIMUTHAL -> R.string.family_azimuthal
+    ProjectionFamily.CYLINDRICAL -> R.string.family_cylindrical
+    ProjectionFamily.PSEUDOCYLINDRICAL -> R.string.family_pseudocylindrical
+}
+
+/**
+ * Center sliders. They show the value while dragging and only re-render when
+ * released. For whole-sphere maps ([wholeSphere]) latitude starts off (fixed
+ * at 0, the normal aspect) and has a switch, and longitude has quick picks.
+ */
+@Composable
+private fun CenterControls(
+    view: ViewSettings,
+    wholeSphere: Boolean,
+    deviceLocation: GeoPoint?,
+    onCenterChange: (Double, Double) -> Unit,
+    onLongitudeChange: (Double) -> Unit,
+    onLatitudeEnabledChange: (Boolean) -> Unit,
+) {
+    var dragLon by remember(view.longitude) { mutableFloatStateOf(view.longitude.toFloat()) }
+    var dragLat by remember(view.latitude) { mutableFloatStateOf(view.latitude.toFloat()) }
+    val latitudeEnabled = !wholeSphere || view.latitudeEnabled
+
     Text(stringResource(R.string.center_longitude, dragLon), style = MaterialTheme.typography.bodyMedium)
     Slider(
         value = dragLon,
         onValueChange = { dragLon = it },
-        onValueChangeFinished = { onChange(dragLon.toDouble(), dragLat.toDouble()) },
+        onValueChangeFinished = { onCenterChange(dragLon.toDouble(), dragLat.toDouble()) },
         valueRange = -180f..180f,
     )
-    Text(stringResource(R.string.center_latitude, dragLat), style = MaterialTheme.typography.bodyMedium)
+    if (wholeSphere) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(
+                selected = view.longitude == 10.0,
+                onClick = { onLongitudeChange(10.0) },
+                label = { Text(stringResource(R.string.longitude_10e)) },
+            )
+            FilterChip(
+                selected = view.longitude == 0.0,
+                onClick = { onLongitudeChange(0.0) },
+                label = { Text(stringResource(R.string.longitude_0)) },
+            )
+            FilterChip(
+                selected = deviceLocation != null && view.longitude == deviceLocation.lon,
+                onClick = { deviceLocation?.let { onLongitudeChange(it.lon) } },
+                enabled = deviceLocation != null,
+                label = { Text(stringResource(R.string.longitude_here)) },
+            )
+        }
+    }
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            stringResource(R.string.center_latitude, if (latitudeEnabled) dragLat else 0f),
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (latitudeEnabled) Color.Unspecified else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+            modifier = Modifier.weight(1f),
+        )
+        if (wholeSphere) Switch(checked = view.latitudeEnabled, onCheckedChange = onLatitudeEnabledChange)
+    }
     Slider(
-        value = dragLat,
+        value = if (latitudeEnabled) dragLat else 0f,
         onValueChange = { dragLat = it },
-        onValueChangeFinished = { onChange(dragLon.toDouble(), dragLat.toDouble()) },
+        onValueChangeFinished = { onCenterChange(dragLon.toDouble(), dragLat.toDouble()) },
         valueRange = -90f..90f,
+        enabled = latitudeEnabled,
     )
 }
 

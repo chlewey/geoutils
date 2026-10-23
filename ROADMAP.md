@@ -99,20 +99,24 @@ still to be checked.
 Goal: cover the projections listed in the README, all through the same
 `Projection` interface.
 
-- [ ] Equirectangular as a real output (with a configurable standard parallel).
-- [ ] Mercator (web Mercator first, with a latitude cutoff; spherical "true"
-      Mercator later).
-- [ ] Cylindrical equal-area with presets: Lambert, Behrmann, Gall–Peters,
+- [x] Equirectangular as a real output. The standard parallel is a
+      constructor parameter; the UI offers plate carrée (0°) for now.
+- [x] Mercator, cut at the web Mercator limit (±85.05°, a square map). On a
+      sphere, web and spherical Mercator are the same projection; they only
+      differ on the ellipsoid (see Later / ideas).
+- [x] Cylindrical equal-area with presets: Lambert, Behrmann, Gall–Peters,
       Hobo–Dyer.
-- [ ] Central cylindrical.
-- [ ] Sinusoidal.
-- [ ] Mollweide.
-- [ ] Equal Earth.
-- [ ] Goode homolosine (interrupted, so this needs clipping at the interruptions).
-- [ ] Azimuthal equidistant.
-- [ ] Lambert azimuthal equal-area.
-- [ ] General antimeridian/boundary cutting for cylindrical and pseudocylindrical maps.
-- [ ] Projection picker in the UI with per-projection parameters.
+- [x] Central cylindrical.
+- [x] Sinusoidal.
+- [x] Mollweide.
+- [x] Equal Earth.
+- [x] Goode homolosine (interrupted, so this needs clipping at the interruptions).
+- [x] Azimuthal equidistant.
+- [x] Lambert azimuthal equal-area.
+- [x] General antimeridian/boundary cutting for cylindrical and pseudocylindrical maps.
+- [x] Projection picker in the UI, grouped by family. Parameters come as
+      presets (the four cylindrical equal-area variants); free parameter
+      editing comes with the registry in milestone 3.
 
 ### Aspect: center and orientation
 
@@ -136,22 +140,35 @@ Defaults and controls for **cylindrical and pseudocylindrical** projections
 (Mercator, equal-area cylindricals, central cylindrical, sinusoidal,
 Mollweide, Equal Earth, Goode):
 
-- [ ] Initial center longitude chosen per projection: 10° E (keeps the
+- [x] Initial center longitude chosen per projection: 10° E (keeps the
       antimeridian cut away from land, at the Bering Strait), 0°, or the
       user's own longitude.
-- [ ] Initial center latitude 0° and azimuth 0° (normal aspect).
-- [ ] The latitude and azimuth controls start **grayed out** (off, fixed at
+- [x] Initial center latitude 0° and azimuth 0° (normal aspect).
+- [x] The latitude and azimuth controls start **grayed out** (off, fixed at
       0°), like the orthographic azimuth control. Only the longitude is
       active.
-- [ ] When the user turns latitude or azimuth on and changes it, the map
+- [x] When the user turns latitude or azimuth on and changes it, the map
       switches to an **oblique aspect**: the sphere is rotated so the chosen
       (lon, lat, azimuth) is at the center of the image, then projected as
       above. For example, a Mercator with azimuth 90° is a transverse
       Mercator.
-- [ ] Tests: a rotated projection with lat₀ = 0 and α = 0 equals the normal
+- [x] Tests: a rotated projection with lat₀ = 0 and α = 0 equals the normal
       one shifted by lon₀; the rotated Orthographic matches the current one;
       forward/inverse round trips hold in oblique aspects.
-- [ ] Round-trip tests (forward then inverse) and reference-point tests for each
+- [x] Each projection keeps its own view (center, latitude and azimuth
+      settings) while the app runs, so switching back and forth doesn't lose
+      it.
+
+Known issue (to fix in milestone 3): Goode homolosine is drawn through the
+generic rotation wrapper, so its interruptions move with the center, latitude
+and azimuth. That's wrong for an interrupted projection: its lobes and cuts
+are laid out for the continents and must stay tied to geography.
+
+Status: implemented. All 14 projections were checked visually with Blue Marble
+and Natural Earth countries, including oblique Mollweide and transverse
+Mercator, and pass forward/inverse round trips in normal and oblique aspects.
+
+- [x] Round-trip tests (forward then inverse) and reference-point tests for each
       projection.
 
 ## Milestone 3: Extensible projections and coordinate transforms (v0.3)
@@ -163,6 +180,26 @@ Goal: adding a projection is cheap, and any projection can be re-aimed.
       is interrupted, is azimuthal). The UI is generated from that description.
 - [ ] Set a new "equator" (central great circle) from **two points**, on top
       of the rotated coordinate system from milestone 2.
+- [ ] **Discontinuous (interrupted) projections are not rotated.** Goode
+      homolosine, and any future interrupted or otherwise discontinuous
+      projection, keeps its lobes and cuts fixed to geography instead of
+      going through the rotation wrapper. The registry marks these
+      projections, and the UI disables (or limits) center, latitude and
+      azimuth for them.
+
+### More projection families
+
+- [ ] **Conic:** Albers equal-area, Lambert conformal conic, equidistant
+      conic, each with one or two standard parallels as parameters.
+      Rotation works for conics as for cylindricals, but the cut runs from
+      the apex and the map is a sector of an annulus.
+- [ ] **Hemispheric:** one hemisphere on its own (for example an azimuthal
+      or orthographic map of the eastern or western hemisphere), with a
+      fixed, named center.
+- [ ] **Double hemispheric:** two hemispheres side by side in one image
+      (western/eastern, or northern/southern), each clipped to its own disk.
+      This needs a projection made of several sub-maps, the same structure
+      interrupted projections need.
 - [ ] Geodesy tools in `geometry`, drawable as overlays:
   - [ ] Great-circle (shortest) path and distance between two points.
   - [ ] Rhumb line (loxodrome) and distance between two points.

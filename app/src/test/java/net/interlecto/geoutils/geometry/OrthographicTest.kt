@@ -136,7 +136,7 @@ class OrthographicTest {
     fun visibleRingIsDensifiedButUnclipped() {
         val ortho = Orthographic(GeoPoint(0.0, 0.0))
         val ring = square(-10.0, -10.0, 10.0, 10.0)
-        val projected = ortho.projectRing(ring)!!
+        val projected = ortho.projectRing(ring).single()
         assertTrue(projected.size > 4)
         assertTrue(projected.all { hypot(it.x, it.y) < 1.0 })
     }
@@ -144,14 +144,14 @@ class OrthographicTest {
     @Test
     fun hiddenRingIsDropped() {
         val ortho = Orthographic(GeoPoint(0.0, 0.0))
-        assertNull(ortho.projectRing(square(150.0, -10.0, 170.0, 10.0)))
+        assertTrue(ortho.projectRing(square(150.0, -10.0, 170.0, 10.0)).isEmpty())
     }
 
     @Test
     fun ringCrossingHorizonFollowsTheShortArc() {
         val ortho = Orthographic(GeoPoint(0.0, 0.0))
         // Straddles the eastern horizon (90° E) between 20° S and 20° N.
-        val projected = ortho.projectRing(square(60.0, -20.0, 120.0, 20.0))!!
+        val projected = ortho.projectRing(square(60.0, -20.0, 120.0, 20.0)).single()
         assertTrue(projected.all { hypot(it.x, it.y) <= 1.0 + 1e-9 })
         val onHorizon = projected.filter { abs(hypot(it.x, it.y) - 1.0) < 1e-9 }
         assertTrue(onHorizon.size >= 2)
@@ -169,7 +169,7 @@ class OrthographicTest {
         // behind the pole must be replaced by the top of the horizon.
         val ortho = Orthographic(GeoPoint(0.0, 0.0))
         val cap = (-180 until 180 step 10).map { GeoPoint(it.toDouble(), 60.0) }
-        val projected = ortho.projectRing(cap)!!
+        val projected = ortho.projectRing(cap).single()
         assertNotNull(projected.find { abs(it.x) < 0.02 && it.y > 0.999 })
         assertTrue(projected.all { it.y >= 0.5 - 1e-9 })
     }

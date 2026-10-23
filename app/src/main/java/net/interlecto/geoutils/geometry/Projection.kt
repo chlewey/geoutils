@@ -35,10 +35,11 @@ interface Projection {
     fun projectLine(points: List<GeoPoint>): List<List<Vec2>>
 
     /**
-     * Projects a closed ring (polygon boundary), clipped to the map. The
-     * result is one closed path, or null when the ring is entirely hidden.
+     * Projects a closed ring (polygon boundary), clipped and cut to fit the
+     * map. Cutting at a seam can turn one ring into several closed paths;
+     * the result is empty when the ring is entirely hidden.
      */
-    fun projectRing(ring: List<GeoPoint>): List<Vec2>?
+    fun projectRing(ring: List<GeoPoint>): List<List<Vec2>>
 }
 
 fun Projection.forward(point: GeoPoint): Vec2? {

@@ -35,14 +35,16 @@ private const val MAX_ZOOM = 16f
 @Composable
 fun MapViewer(scene: MapScene?, modifier: Modifier = Modifier) {
     // Offset of the scene center from the view center, in screen pixels.
-    var offset by remember { mutableStateOf(Offset.Zero) }
-    var zoom by remember { mutableFloatStateOf(1f) }
+    // Both reset when the map's shape changes (another projection).
+    val shape = scene?.let { it.width to it.height }
+    var offset by remember(shape) { mutableStateOf(Offset.Zero) }
+    var zoom by remember(shape) { mutableFloatStateOf(1f) }
     val raster = remember(scene) { scene?.raster?.toBitmap() }
 
     Box(
         modifier
             .clipToBounds()
-            .pointerInput(Unit) {
+            .pointerInput(shape) {
                 detectTransformGestures { centroid, pan, gestureZoom, _ ->
                     val newZoom = (zoom * gestureZoom).coerceIn(1f, MAX_ZOOM)
                     val factor = newZoom / zoom
@@ -52,7 +54,7 @@ fun MapViewer(scene: MapScene?, modifier: Modifier = Modifier) {
                     zoom = newZoom
                 }
             }
-            .pointerInput(Unit) {
+            .pointerInput(shape) {
                 detectTapGestures(onDoubleTap = {
                     zoom = 1f
                     offset = Offset.Zero

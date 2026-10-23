@@ -77,10 +77,10 @@ object SceneBuilder {
 
         is Geometry.Polygon -> {
             val outer = projection.projectRing(geometry.outer)
-            if (outer == null) {
+            if (outer.isEmpty()) {
                 emptyList()
             } else {
-                val rings = listOf(outer) + geometry.holes.mapNotNull(projection::projectRing)
+                val rings = outer + geometry.holes.flatMap(projection::projectRing)
                 listOf(
                     SceneShape.Path(placemark.name, placemark.style, rings.map { it.map(viewport::toPixel) }, closed = true),
                 )

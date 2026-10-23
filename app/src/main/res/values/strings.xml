@@ -19,6 +19,13 @@
         <item quantity="one">%1$s · %2$d placemark</item>
         <item quantity="other">%1$s · %2$d placemarks</item>
     </plurals>
+    <string name="projection">Projection</string>
+    <string name="family_azimuthal">Azimuthal</string>
+    <string name="family_cylindrical">Cylindrical</string>
+    <string name="family_pseudocylindrical">Pseudocylindrical</string>
+    <string name="longitude_10e">10° E</string>
+    <string name="longitude_0">0°</string>
+    <string name="longitude_here">Here</string>
     <string name="center_longitude">Center longitude: %1$.1f°</string>
     <string name="center_latitude">Center latitude: %1$.1f°</string>
     <string name="azimuth">Azimuth (up): %1$.1f°</string>

@@ -56,3 +56,7 @@ replay_pid*.log
 
 # Gradle wrapper must be committed
 !gradle/wrapper/gradle-wrapper.jar
+
+# Signing: only the shared debug key is committed
+keystore.properties
+*.jks

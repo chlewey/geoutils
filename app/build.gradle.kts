@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -6,6 +8,10 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.room)
 }
+
+val releaseKeystore: Properties? = rootProject.file("keystore.properties")
+    .takeIf { it.exists() }
+    ?.let { file -> Properties().apply { file.inputStream().use { load(it) } } }
 
 android {
     namespace = "net.interlecto.geoutils"
@@ -19,8 +25,29 @@ android {
         versionName = "0.0.1"
     }
 
+    signingConfigs {
+        // Shared debug key, committed on purpose: every machine signs debug
+        // builds the same way, so a test device can update the app in place.
+        getByName("debug") {
+            storeFile = rootProject.file("keystore/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+        // Release key is never committed; it's read from keystore.properties.
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = rootProject.file(releaseKeystore.getProperty("storeFile"))
+                storePassword = releaseKeystore.getProperty("storePassword")
+                keyAlias = releaseKeystore.getProperty("keyAlias")
+                keyPassword = releaseKeystore.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

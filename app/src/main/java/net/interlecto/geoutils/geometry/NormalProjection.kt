@@ -1,6 +1,7 @@
 package net.interlecto.geoutils.geometry
 
 import kotlin.math.PI
+import kotlin.math.abs
 
 /**
  * The formulas of a projection in its normal aspect: centered on (0°, 0°)
@@ -25,10 +26,30 @@ interface NormalProjection {
     fun inverse(x: Double, y: Double, out: DoubleArray): Boolean
 }
 
-/** A cut along the meridian [lambda] from [phiMin] to [phiMax], in radians, normal aspect. */
-data class Seam(val lambda: Double, val phiMin: Double, val phiMax: Double) {
+/**
+ * A cut in the map, as (λ, φ) vertices in radians (normal aspect) starting
+ * at a pole. Each segment runs along a meridian or a parallel, so a cut can
+ * step sideways, as Goode's "extended Greenland" interruption does.
+ */
+data class Seam(val path: List<Vec2>) {
+    init {
+        require(path.size >= 2) { "A seam needs at least two points" }
+        require(abs(abs(path[0].y) - PI / 2) < 1e-12) { "A seam starts at a pole" }
+        for (i in 1 until path.size) {
+            require(path[i].x == path[i - 1].x || path[i].y == path[i - 1].y) {
+                "Seam segments run along meridians or parallels"
+            }
+        }
+    }
+
+    val fromNorth: Boolean get() = path[0].y > 0
+
     companion object {
-        val ANTIMERIDIAN = Seam(PI, -PI / 2, PI / 2)
+        val ANTIMERIDIAN = Seam(listOf(Vec2(PI, PI / 2), Vec2(PI, -PI / 2)))
+
+        /** A cut along meridian [lambda] from the north or south pole to latitude [tipPhi]. */
+        fun meridian(lambda: Double, fromNorth: Boolean, tipPhi: Double) =
+            Seam(listOf(Vec2(lambda, if (fromNorth) PI / 2 else -PI / 2), Vec2(lambda, tipPhi)))
     }
 }
 
@@ -44,7 +65,8 @@ sealed interface Clip {
 
     /**
      * The whole sphere is drawn, cut along [seams]. The first seam must be
-     * the antimeridian; others (interruptions) must touch a pole.
+     * the antimeridian; others (interruptions) start at a pole and must not
+     * cross the antimeridian.
      */
     data class Seams(val seams: List<Seam> = listOf(Seam.ANTIMERIDIAN)) : Clip {
         init {

@@ -7,6 +7,7 @@ import kotlin.math.atan2
 import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.min
+import kotlin.math.sign
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -16,7 +17,7 @@ import kotlin.math.sqrt
  */
 internal interface Clipper {
     fun isVisible(qx: Double, qy: Double, qz: Double): Boolean
-    fun outline(): List<Vec2>
+    fun outline(): List<List<Vec2>>
     fun line(points: List<Vec3>): List<List<Vec2>>
     fun ring(points: List<Vec3>): List<List<Vec2>>
 }
@@ -49,7 +50,8 @@ internal class CapClipper(private val base: NormalProjection, private val minCos
 
     override fun isVisible(qx: Double, qy: Double, qz: Double) = qx >= minCos
 
-    override fun outline(): List<Vec2> = List(OUTLINE_STEPS) { i -> base.project(rim(2 * PI * i / OUTLINE_STEPS)) }
+    override fun outline(): List<List<Vec2>> =
+        listOf(List(OUTLINE_STEPS) { i -> base.project(rim(2 * PI * i / OUTLINE_STEPS)) })
 
     override fun line(points: List<Vec3>): List<List<Vec2>> {
         val pieces = mutableListOf<MutableList<Vec2>>()
@@ -141,7 +143,7 @@ internal class CapClipper(private val base: NormalProjection, private val minCos
  *
  * The map's edge is a closed loop in (λ, φ): the bottom (south pole) line,
  * the west side of the antimeridian, the top (north pole) line and its east
- * side, detouring along both sides of every interruption. It runs
+ * side, detouring down and back up both sides of every interruption. It runs
  * counterclockwise, with the map on its left.
  *
  * A polygon ring is first oriented so its inside (taken as the smaller of
@@ -150,10 +152,69 @@ internal class CapClipper(private val base: NormalProjection, private val minCos
  * the edge loop forward from each piece's exit to the next entry, as in
  * Weiler–Atherton clipping.
  */
-internal class SeamClipper(private val base: NormalProjection, private val seams: List<Seam>) : Clipper {
+internal class SeamClipper(private val base: NormalProjection, seams: List<Seam>) : Clipper {
 
-    /** A straight run of the edge loop in (λ, φ). */
-    private class Edge(val from: Vec2, val to: Vec2, val seam: Int, val eastSide: Boolean) {
+    /**
+     * One straight segment of a seam, from [a] to [b] (pole to tip). Its
+     * left and right sides are relative to that direction.
+     */
+    private class Segment(val a: Vec2, val b: Vec2) {
+        val meridian = a.x == b.x
+        private val dLambda = sign(b.x - a.x)
+        private val dPhi = sign(b.y - a.y)
+        // Exact on the antimeridian: sin(π) is not quite 0 in floating point, and
+        // the side test must agree with localLambda for points right on the seam.
+        private val normal = if (abs(a.x) == PI) Vec3(0.0, -1.0, 0.0) else Vec3(-sin(a.x), cos(a.x), 0.0)
+        private val direction = if (abs(a.x) == PI) Vec3(-1.0, 0.0, 0.0) else Vec3(cos(a.x), sin(a.x), 0.0)
+        private val sinPhi = sin(a.y)
+        val lo = if (meridian) min(a.y, b.y) else min(a.x, b.x)
+        val hi = if (meridian) maxOf(a.y, b.y) else maxOf(a.x, b.x)
+
+        /** Positive east of a meridian segment, north of a parallel one. */
+        fun side(q: Vec3): Double = if (meridian) q dot normal else q.z - sinPhi
+
+        /** Whether positive [side] values are on the left. */
+        val positiveIsLeft = if (meridian) dPhi < 0 else dLambda > 0
+
+        /** Where the chord from [p] to [q] crosses this segment, or null. */
+        fun crossing(p: Vec3, q: Vec3, sp: Double, sq: Double): Vec2? {
+            val t = sp / (sp - sq)
+            val m = (p + (q - p) * t).normalized()
+            return if (meridian) {
+                if ((m dot direction) <= 0) return null // The other half of the great circle.
+                val phi = asin(m.z.coerceIn(-1.0, 1.0))
+                if (phi in lo..hi) Vec2(a.x, phi) else null
+            } else {
+                val lambda = localLambda(m.x, m.y)
+                if (lambda in lo..hi) Vec2(lambda, a.y) else null
+            }
+        }
+
+        /**
+         * A vertex lying right on this segment, moved just off it to the side
+         * [side] puts it on, the same test that decides crossings; null if the
+         * vertex isn't on the segment. Otherwise a vertex on an interruption
+         * would be drawn on whichever lobe the projection picks for that exact
+         * longitude, maybe across the gap from the rest of its path.
+         */
+        fun nudge(lambda: Double, phi: Double, q: Vec3): Vec2? {
+            val s = if (side(q) >= 0) EPS else -EPS
+            return if (meridian) {
+                if (abs(lambda - a.x) < ON_SEAM && phi in lo..hi) Vec2(wrapLambda(a.x + s), phi) else null
+            } else {
+                if (abs(phi - a.y) < ON_SEAM && lambda in lo..hi) Vec2(lambda, a.y + s) else null
+            }
+        }
+
+        /** [p] moved just off the segment to its left or right side. */
+        fun offset(p: Vec2, left: Boolean): Vec2 {
+            val s = if (left) EPS else -EPS
+            return Vec2(wrapLambda(p.x - dPhi * s), p.y + dLambda * s)
+        }
+    }
+
+    /** A straight run of the edge loop in (λ, φ); along one side of [segment], if any. */
+    private class Edge(val from: Vec2, val to: Vec2, val segment: Segment?, val left: Boolean) {
         val length = abs(to.x - from.x) + abs(to.y - from.y)
         var start = 0.0
 
@@ -167,21 +228,19 @@ internal class SeamClipper(private val base: NormalProjection, private val seams
 
     private class Point(val lambda: Double, val phi: Double, val atPole: Boolean) : Event
 
-    /** A seam crossing: the path leaves the map at [exitLambda] and continues at [entryLambda]. */
+    /** A seam crossing: the path leaves the map at [exit] and continues at [entry]. */
     private class Crossing(
         val t: Double,
-        val seam: Int,
-        val westToEast: Boolean,
-        val phi: Double,
-        val exitLambda: Double,
-        val entryLambda: Double,
+        val exit: Vec2,
+        val entry: Vec2,
+        val exitPos: Double,
+        val entryPos: Double,
     ) : Event
 
     private class Piece(val entry: Double, val exit: Double, val points: List<Vec2>)
 
-    /** Points east, normal to each seam's meridian plane. */
-    private val normals = seams.map { Vec3(-sin(it.lambda), cos(it.lambda), 0.0) }
-    private val directions = seams.map { Vec3(cos(it.lambda), sin(it.lambda), 0.0) }
+    private val segments: List<List<Segment>> = seams.map { seam -> seam.path.zipWithNext { a, b -> Segment(a, b) } }
+    private val fromNorth = seams.map { it.fromNorth }
     private val edges: List<Edge> = buildEdgeLoop()
     private val perimeter: Double
 
@@ -196,15 +255,15 @@ internal class SeamClipper(private val base: NormalProjection, private val seams
 
     override fun isVisible(qx: Double, qy: Double, qz: Double) = true
 
-    override fun outline(): List<Vec2> = (listOf(pointAt(0.0)) + walk(0.0, perimeter)).map(::project)
+    override fun outline(): List<List<Vec2>> = listOf((listOf(pointAt(0.0)) + walk(0.0, perimeter)).map(::project))
 
     override fun line(points: List<Vec3>): List<List<Vec2>> {
         val pieces = mutableListOf(mutableListOf<Vec2>())
         for (event in events(points, closed = false)) when (event) {
             is Point -> pieces.last().add(Vec2(event.lambda, event.phi))
             is Crossing -> {
-                pieces.last().add(Vec2(event.exitLambda, event.phi))
-                pieces.add(mutableListOf(Vec2(event.entryLambda, event.phi)))
+                pieces.last().add(event.exit)
+                pieces.add(mutableListOf(event.entry))
             }
         }
         return pieces.filter { it.size >= 2 }.map { piece -> piece.map(::project) }
@@ -225,19 +284,15 @@ internal class SeamClipper(private val base: NormalProjection, private val seams
         val n = events.size
         val pieces = mutableListOf<Piece>()
         var start = events[first] as Crossing
-        var current = mutableListOf(Vec2(start.entryLambda, start.phi))
+        var current = mutableListOf(start.entry)
         for (k in 1..n) {
             when (val event = events[(first + k) % n]) {
                 is Point -> current.add(Vec2(event.lambda, event.phi))
                 is Crossing -> {
-                    current.add(Vec2(event.exitLambda, event.phi))
-                    pieces += Piece(
-                        entry = position(start.seam, eastSide = start.westToEast, start.phi),
-                        exit = position(event.seam, eastSide = !event.westToEast, event.phi),
-                        points = current,
-                    )
+                    current.add(event.exit)
+                    pieces += Piece(entry = start.entryPos, exit = event.exitPos, points = current)
                     start = event
-                    current = mutableListOf(Vec2(event.entryLambda, event.phi))
+                    current = mutableListOf(event.entry)
                 }
             }
         }
@@ -264,69 +319,69 @@ internal class SeamClipper(private val base: NormalProjection, private val seams
 
     private fun project(p: Vec2): Vec2 = base.project(p.x, p.y)
 
-    /** Longitude just east or west of a seam, wrapped into [-π, π]. */
-    private fun sideLambda(seam: Int, eastSide: Boolean): Double {
-        val l = seams[seam].lambda + if (eastSide) EPS else -EPS
-        return when {
-            l > PI -> l - 2 * PI
-            l < -PI -> l + 2 * PI
-            else -> l
-        }
+    /** Down the left side of seam [k], pole to tip. */
+    private fun descend(k: Int) = segments[k].mapIndexed { j, s ->
+        Edge(sideVertex(k, j, true), sideVertex(k, j + 1, true), s, true)
+    }
+
+    /** Back up the right side of seam [k], tip to pole. */
+    private fun ascend(k: Int) = segments[k].indices.reversed().map { j ->
+        Edge(sideVertex(k, j + 1, false), sideVertex(k, j, false), segments[k][j], false)
+    }
+
+    /**
+     * Vertex [i] of seam [k], moved just off the seam to one side. At a
+     * corner it moves off both segments, so it doesn't sit on the other
+     * segment's line (where it could fall on the wrong side, in another lobe).
+     */
+    private fun sideVertex(k: Int, i: Int, left: Boolean): Vec2 {
+        val seam = segments[k]
+        var p = if (i < seam.size) seam[i].a else seam[i - 1].b
+        if (i > 0) p = seam[i - 1].offset(p, left)
+        if (i < seam.size) p = seam[i].offset(p, left)
+        return p
     }
 
     private fun buildEdgeLoop(): List<Edge> {
         val south = -PI / 2
         val north = PI / 2
-        val west = sideLambda(0, eastSide = true)
-        val east = sideLambda(0, eastSide = false)
         val loop = mutableListOf<Edge>()
+        val leftEdge = descend(0) // East side of the antimeridian, north to south.
+        val rightEdge = ascend(0) // West side, south to north.
 
         // Bottom: west to east, around interruptions that start at the south pole.
-        var lambda = west
-        val southern = seams.indices.drop(1).filter { seams[it].phiMin <= south }.sortedBy { seams[it].lambda }
-        for (k in southern) {
-            val westSide = sideLambda(k, eastSide = false)
-            val eastSide = sideLambda(k, eastSide = true)
-            val tip = seams[k].phiMax
-            loop += Edge(Vec2(lambda, south), Vec2(westSide, south), -1, false)
-            loop += Edge(Vec2(westSide, south), Vec2(westSide, tip), k, false)
-            loop += Edge(Vec2(eastSide, tip), Vec2(eastSide, south), k, true)
-            lambda = eastSide
+        var lambda = leftEdge.last().to.x
+        for (k in segments.indices.drop(1).filter { !fromNorth[it] }.sortedBy { segments[it][0].a.x }) {
+            val down = descend(k)
+            val up = ascend(k)
+            loop += Edge(Vec2(lambda, south), down.first().from, null, false)
+            loop += down
+            loop += up
+            lambda = up.last().to.x
         }
-        loop += Edge(Vec2(lambda, south), Vec2(east, south), -1, false)
-        // Right: west side of the antimeridian, south to north.
-        loop += Edge(Vec2(east, south), Vec2(east, north), 0, false)
+        loop += Edge(Vec2(lambda, south), rightEdge.first().from, null, false)
+        loop += rightEdge
 
         // Top: east to west, around interruptions that start at the north pole.
-        lambda = east
-        val northern = seams.indices.drop(1).filter { seams[it].phiMax >= north }.sortedByDescending { seams[it].lambda }
-        for (k in northern) {
-            val eastSide = sideLambda(k, eastSide = true)
-            val westSide = sideLambda(k, eastSide = false)
-            val tip = seams[k].phiMin
-            loop += Edge(Vec2(lambda, north), Vec2(eastSide, north), -1, false)
-            loop += Edge(Vec2(eastSide, north), Vec2(eastSide, tip), k, true)
-            loop += Edge(Vec2(westSide, tip), Vec2(westSide, north), k, false)
-            lambda = westSide
+        lambda = rightEdge.last().to.x
+        for (k in segments.indices.drop(1).filter { fromNorth[it] }.sortedByDescending { segments[it][0].a.x }) {
+            val down = descend(k)
+            val up = ascend(k)
+            loop += Edge(Vec2(lambda, north), down.first().from, null, false)
+            loop += down
+            loop += up
+            lambda = up.last().to.x
         }
-        loop += Edge(Vec2(lambda, north), Vec2(west, north), -1, false)
-        // Left: east side of the antimeridian, north to south.
-        loop += Edge(Vec2(west, north), Vec2(west, south), 0, true)
+        loop += Edge(Vec2(lambda, north), leftEdge.first().from, null, false)
+        loop += leftEdge
         return loop
     }
 
-    /** Position along the edge loop of a point on one side of a seam. */
-    private fun position(seam: Int, eastSide: Boolean, phi: Double): Double {
-        val edge = edges
-            .filter { it.seam == seam && it.eastSide == eastSide }
-            .minBy { e ->
-                val lo = min(e.from.y, e.to.y)
-                val hi = maxOf(e.from.y, e.to.y)
-                if (phi < lo) lo - phi else if (phi > hi) phi - hi else 0.0
-            }
-        val lo = min(edge.from.y, edge.to.y)
-        val hi = maxOf(edge.from.y, edge.to.y)
-        return edge.start + abs(phi.coerceIn(lo, hi) - edge.from.y)
+    /** Position along the edge loop of [point], on one side of [segment]. */
+    private fun position(segment: Segment, left: Boolean, point: Vec2): Double {
+        val edge = edges.first { it.segment === segment && it.left == left }
+        val d = if (segment.meridian) abs(point.y - edge.from.y) else abs(point.x - edge.from.x)
+        return edge.start + d.coerceIn(0.0, edge.length)
     }
 
     private fun edgeAt(pos: Double): Edge {
@@ -358,34 +413,37 @@ internal class SeamClipper(private val base: NormalProjection, private val seams
     private fun events(points: List<Vec3>, closed: Boolean): List<Event> {
         val pts = dedupe(points, closed)
         val raw = mutableListOf<Event>()
-        val segments = if (closed) pts.size else pts.size - 1
+        val count = if (closed) pts.size else pts.size - 1
         for (i in pts.indices) {
             val a = pts[i]
-            raw += Point(localLambda(a.x, a.y), asin(a.z.coerceIn(-1.0, 1.0)), abs(a.z) > 1 - POLE_EPS)
-            if (i < segments) raw += crossings(a, pts[(i + 1) % pts.size])
+            val atPole = abs(a.z) > 1 - POLE_EPS
+            var lambda = localLambda(a.x, a.y)
+            var phi = asin(a.z.coerceIn(-1.0, 1.0))
+            if (!atPole) {
+                for (seam in segments) for (segment in seam) {
+                    segment.nudge(lambda, phi, a)?.let { lambda = it.x; phi = it.y }
+                }
+            }
+            raw += Point(lambda, phi, atPole)
+            if (i < count) raw += crossings(a, pts[(i + 1) % pts.size])
         }
         return splitPoles(raw, closed)
     }
 
     private fun crossings(a: Vec3, b: Vec3): List<Crossing> {
         val found = mutableListOf<Crossing>()
-        for (k in seams.indices) {
-            val sa = a dot normals[k]
-            val sb = b dot normals[k]
+        for (seam in segments) for (segment in seam) {
+            val sa = segment.side(a)
+            val sb = segment.side(b)
             if ((sa < 0) == (sb < 0)) continue
-            val t = sa / (sa - sb)
-            val m = (a + (b - a) * t).normalized()
-            if ((m dot directions[k]) <= 0) continue // The other half of the great circle.
-            val phi = asin(m.z.coerceIn(-1.0, 1.0))
-            if (phi < seams[k].phiMin || phi > seams[k].phiMax) continue
-            val westToEast = sa < 0
+            val at = segment.crossing(a, b, sa, sb) ?: continue
+            val exitLeft = (sa >= 0) == segment.positiveIsLeft
             found += Crossing(
-                t = t,
-                seam = k,
-                westToEast = westToEast,
-                phi = phi,
-                exitLambda = sideLambda(k, eastSide = !westToEast),
-                entryLambda = sideLambda(k, eastSide = westToEast),
+                t = sa / (sa - sb),
+                exit = segment.offset(at, exitLeft),
+                entry = segment.offset(at, !exitLeft),
+                exitPos = position(segment, exitLeft, at),
+                entryPos = position(segment, !exitLeft, at),
             )
         }
         return found.sortedBy { it.t }
@@ -408,7 +466,7 @@ internal class SeamClipper(private val base: NormalProjection, private val seams
                 if (i == from) return null
                 when (val e = events[i]) {
                     is Point -> if (!e.atPole) return e.lambda
-                    is Crossing -> return if (step < 0) e.entryLambda else e.exitLambda
+                    is Crossing -> return if (step < 0) e.entry.x else e.exit.x
                 }
                 i += step
             }
@@ -447,8 +505,140 @@ internal class SeamClipper(private val base: NormalProjection, private val seams
 
     private companion object {
         const val EPS = 1e-9
+
+        /** How close to a seam a vertex counts as lying on it. */
+        const val ON_SEAM = 1e-12
         const val POLE_EPS = 1e-12
     }
+}
+
+/** An area of the sphere bounded by two meridians and two parallels, in radians (normal aspect). */
+data class LonLatBox(val minLambda: Double, val maxLambda: Double, val minPhi: Double, val maxPhi: Double) {
+    init {
+        require(maxLambda - minLambda in 0.0..PI) { "A box spans at most 180° of longitude, without wrapping" }
+    }
+}
+
+/**
+ * Keeps only what lies inside [box], clipping in 3D against its four sides
+ * as half-spaces: two meridian planes and two parallel (latitude) planes.
+ * The box spans less than 180° of longitude, so the two meridian half-spaces
+ * meet in a single lune and no wrapping is involved.
+ */
+internal class BoxClipper(private val base: NormalProjection, private val box: LonLatBox) : Clipper {
+
+    /** A side as a half-space: inside when q·normal ≥ offset. */
+    private class Side(val normal: Vec3, val offset: Double) {
+        fun value(q: Vec3) = (q dot normal) - offset
+        fun value(qx: Double, qy: Double, qz: Double) = qx * normal.x + qy * normal.y + qz * normal.z - offset
+    }
+
+    private val sides = listOf(
+        Side(Vec3(-sin(box.minLambda), cos(box.minLambda), 0.0), 0.0), // East of minLambda.
+        Side(Vec3(sin(box.maxLambda), -cos(box.maxLambda), 0.0), 0.0), // West of maxLambda.
+        Side(Vec3(0.0, 0.0, 1.0), sin(box.minPhi)), // North of minPhi.
+        Side(Vec3(0.0, 0.0, -1.0), -sin(box.maxPhi)), // South of maxPhi.
+    )
+
+    override fun isVisible(qx: Double, qy: Double, qz: Double): Boolean = sides.all { it.value(qx, qy, qz) >= 0 }
+
+    override fun outline(): List<List<Vec2>> {
+        val corners = listOf(
+            Vec2(box.minLambda, box.minPhi),
+            Vec2(box.maxLambda, box.minPhi),
+            Vec2(box.maxLambda, box.maxPhi),
+            Vec2(box.minLambda, box.maxPhi),
+        )
+        return listOf(densifyFlat(corners + corners.first()).dropLast(1).map { base.project(it.x, it.y) })
+    }
+
+    override fun line(points: List<Vec3>): List<List<Vec2>> {
+        val pieces = mutableListOf<MutableList<Vec3>>()
+        var current: MutableList<Vec3>? = null
+        for (i in 0 until points.size - 1) {
+            val clipped = clipSegment(points[i], points[i + 1])
+            if (clipped == null) {
+                current = null
+                continue
+            }
+            val (a, b) = clipped
+            val piece = current?.takeIf { it.last() == a } ?: mutableListOf(a).also { pieces += it }
+            piece.add(b)
+            // When the far end was clipped, the path leaves the box here.
+            current = if (b == points[i + 1]) piece else null
+        }
+        return pieces.filter { it.size >= 2 }.map { piece ->
+            densifyFlat(piece.map(::toFlat)).map { base.project(it.x, it.y) }
+        }
+    }
+
+    override fun ring(points: List<Vec3>): List<List<Vec2>> {
+        var poly = points
+        for (side in sides) {
+            if (poly.isEmpty()) break
+            poly = clipPolygon(poly, side)
+        }
+        if (poly.size < 3) return emptyList()
+        val flat = poly.map(::toFlat)
+        return listOf(densifyFlat(flat + flat.first()).dropLast(1).map { base.project(it.x, it.y) })
+    }
+
+    /** Sutherland–Hodgman against one side. */
+    private fun clipPolygon(poly: List<Vec3>, side: Side): List<Vec3> {
+        val out = mutableListOf<Vec3>()
+        for (i in poly.indices) {
+            val a = poly[i]
+            val b = poly[(i + 1) % poly.size]
+            val va = side.value(a)
+            val vb = side.value(b)
+            if (va >= 0) out += a
+            if ((va >= 0) != (vb >= 0)) out += (a + (b - a) * (va / (va - vb))).normalized()
+        }
+        return out
+    }
+
+    /** The part of segment [a]–[b] inside the box (Liang–Barsky on the chord), or null. */
+    private fun clipSegment(a: Vec3, b: Vec3): Pair<Vec3, Vec3>? {
+        var t0 = 0.0
+        var t1 = 1.0
+        for (side in sides) {
+            val va = side.value(a)
+            val vb = side.value(b)
+            if (va < 0 && vb < 0) return null
+            if (va >= 0 && vb >= 0) continue
+            val t = va / (va - vb)
+            if (va < 0) t0 = maxOf(t0, t) else t1 = min(t1, t)
+        }
+        if (t0 > t1) return null
+        val start = if (t0 == 0.0) a else (a + (b - a) * t0).normalized()
+        val end = if (t1 == 1.0) b else (a + (b - a) * t1).normalized()
+        return start to end
+    }
+
+    private fun toFlat(q: Vec3) = Vec2(localLambda(q.x, q.y), asin(q.z.coerceIn(-1.0, 1.0)))
+
+    /** Adds points every degree in (λ, φ), so cuts along the box's parallels follow them. */
+    private fun densifyFlat(points: List<Vec2>): List<Vec2> {
+        val out = mutableListOf<Vec2>()
+        for (i in points.indices) {
+            val a = points[i]
+            out += a
+            if (i == points.lastIndex) break
+            val b = points[i + 1]
+            val steps = ceil(maxOf(abs(b.x - a.x), abs(b.y - a.y)) / STEP_RAD).toInt()
+            for (s in 1 until steps) {
+                val f = s.toDouble() / steps
+                out += Vec2(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f)
+            }
+        }
+        return out
+    }
+}
+
+private fun wrapLambda(l: Double): Double = when {
+    l > PI -> l - 2 * PI
+    l < -PI -> l + 2 * PI
+    else -> l
 }
 
 /** Drops consecutive repeated points (and, for rings, a last point equal to the first). */

@@ -13,9 +13,11 @@ data class MapScene(
     val height: Int,
     /** Reprojected base map, [width] × [height], transparent outside the map. */
     val raster: RasterImage?,
-    /** Closed boundary of the map. */
-    val outline: List<Vec2>,
+    /** Closed boundary of the map: one loop, or several for maps in parts. */
+    val outlines: List<List<Vec2>>,
     val graticule: List<List<Vec2>>,
+    /** Tropics and polar circles, drawn dashed. */
+    val specialParallels: List<List<Vec2>> = emptyList(),
     val shapes: List<SceneShape>,
     /** Multiplier for [FeatureStyle] widths at this output size. */
     val strokeScale: Float,

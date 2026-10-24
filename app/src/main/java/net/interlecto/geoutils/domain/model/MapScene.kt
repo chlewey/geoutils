@@ -16,6 +16,8 @@ data class MapScene(
     /** Closed boundary of the map: one loop, or several for maps in parts. */
     val outlines: List<List<Vec2>>,
     val graticule: List<List<Vec2>>,
+    /** Tropics and polar circles, drawn dashed. */
+    val specialParallels: List<List<Vec2>> = emptyList(),
     val shapes: List<SceneShape>,
     /** Multiplier for [FeatureStyle] widths at this output size. */
     val strokeScale: Float,

@@ -130,6 +130,10 @@ private fun MapTab(state: MapUiState, viewModel: MapViewModel, onOpenImage: () -
         Text(stringResource(R.string.graticule), Modifier.weight(1f))
         Switch(checked = state.showGraticule, onCheckedChange = viewModel::setGraticule)
     }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(stringResource(R.string.special_parallels), Modifier.weight(1f))
+        Switch(checked = state.showSpecialParallels, onCheckedChange = viewModel::setSpecialParallels)
+    }
     Hint(stringResource(R.string.viewer_hint))
 }
 
@@ -214,9 +218,17 @@ private fun PoleShortcuts(latitude: Double, latitudes: List<Double>, onSelect: (
     }
 }
 
-/** A route between two points: great circle, rhumb line, or both, with distances and bearings. */
+/** A route between two points, and distances (rings, bearings, a radius) from one point. */
 @Composable
 private fun ToolsTab(state: MapUiState, viewModel: MapViewModel) {
+    RouteSection(state, viewModel)
+    Spacer(Modifier.padding(top = 8.dp))
+    DistancesSection(state, viewModel)
+}
+
+/** Great circle, rhumb line, or both between two points, with distances and bearings. */
+@Composable
+private fun RouteSection(state: MapUiState, viewModel: MapViewModel) {
     val route = state.route
     Label(stringResource(R.string.route_title))
     PointPairEditor(
@@ -255,6 +267,72 @@ private fun ToolsTab(state: MapUiState, viewModel: MapViewModel) {
     }
     TextButton(onClick = { viewModel.setRoute(null) }) { Text(stringResource(R.string.route_clear)) }
 }
+
+/**
+ * Rings, bearings and a radius around one point. While they are shown, the
+ * Rings and Bearings boxes apply at once; the other fields apply with the button.
+ */
+@Composable
+private fun DistancesSection(state: MapUiState, viewModel: MapViewModel) {
+    val current = state.distances
+    Label(stringResource(R.string.distances_title))
+    Hint(stringResource(R.string.distances_hint))
+    val point = pointFields(current?.center)
+    PointRow(stringResource(R.string.point_center), point, state.view.aspectFor(state.projectionType).first)
+    var spacing by remember(current) { mutableStateOf(formatDegrees(current?.spacingKm ?: 1000.0)) }
+    var radius by remember(current) { mutableStateOf(current?.radiusKm?.let(::formatDegrees).orEmpty()) }
+    var rings by remember(current) { mutableStateOf(current?.rings ?: true) }
+    var rays by remember(current) { mutableStateOf(current?.rays ?: true) }
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        OutlinedTextField(
+            value = spacing,
+            onValueChange = { spacing = it },
+            label = { Text(stringResource(R.string.ring_spacing)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            modifier = Modifier.weight(1f),
+        )
+        OutlinedTextField(
+            value = radius,
+            onValueChange = { radius = it },
+            label = { Text(stringResource(R.string.circle_radius)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            modifier = Modifier.weight(1f),
+        )
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(checked = rings, onCheckedChange = {
+            rings = it
+            current?.let { d -> viewModel.setDistances(d.copy(rings = it)) }
+        })
+        Text(stringResource(R.string.show_rings), style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.width(16.dp))
+        Checkbox(checked = rays, onCheckedChange = {
+            rays = it
+            current?.let { d -> viewModel.setDistances(d.copy(rays = it)) }
+        })
+        Text(stringResource(R.string.show_rays), style = MaterialTheme.typography.bodyMedium)
+    }
+    val center = point.parse()
+    // At least 100 km between rings (at most 200 of them), and a radius short of
+    // a hemisphere, so the filled side is the one around the center.
+    val spacingKm = parseNumber(spacing)?.takeIf { it in 100.0..20000.0 }
+    val radiusKm = parseNumber(radius)?.takeIf { it in 1.0..10000.0 }
+    val valid = center != null && spacingKm != null && (radius.isBlank() || radiusKm != null)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Button(
+            onClick = { if (valid) viewModel.setDistances(Distances(center!!, spacingKm!!, rings, rays, radiusKm)) },
+            enabled = valid,
+        ) { Text(stringResource(R.string.distances_show)) }
+        if (current != null) {
+            TextButton(onClick = { viewModel.setDistances(null) }) { Text(stringResource(R.string.distances_clear)) }
+        }
+    }
+}
+
+/** A number typed by the user, accepting a comma as decimal separator. */
+private fun parseNumber(text: String): Double? = text.trim().replace(',', '.').toDoubleOrNull()
 
 @Composable
 private fun SourcePicker(state: MapUiState, onSelect: (MapSource?) -> Unit, onOpenImage: () -> Unit) {
@@ -315,6 +393,7 @@ private fun familyLabel(family: ProjectionFamily) = when (family) {
     ProjectionFamily.AZIMUTHAL -> R.string.family_azimuthal
     ProjectionFamily.CYLINDRICAL -> R.string.family_cylindrical
     ProjectionFamily.PSEUDOCYLINDRICAL -> R.string.family_pseudocylindrical
+    ProjectionFamily.CONIC -> R.string.family_conic
     ProjectionFamily.DOUBLE_HEMISPHERIC -> R.string.family_double_hemispheric
 }
 

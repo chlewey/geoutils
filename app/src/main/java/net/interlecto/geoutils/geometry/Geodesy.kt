@@ -31,6 +31,52 @@ object Geodesy {
     }
 
     /**
+     * The point reached from [from] by going [distance] (an angle) along the
+     * great circle that leaves it at [bearingDeg], clockwise from north.
+     */
+    fun destination(from: GeoPoint, distance: Double, bearingDeg: Double): GeoPoint {
+        val lambda = Math.toRadians(from.lon)
+        val phi = Math.toRadians(from.lat)
+        val east = Vec3(-sin(lambda), cos(lambda), 0.0)
+        val north = Vec3(-sin(phi) * cos(lambda), -sin(phi) * sin(lambda), cos(phi))
+        val b = Math.toRadians(bearingDeg)
+        val heading = north * cos(b) + east * sin(b)
+        return (from.toVec3() * cos(distance) + heading * sin(distance)).toGeoPoint()
+    }
+
+    /**
+     * The small circle of all points at [radius] (an angle) from [center], as
+     * a closed ring sampled every [stepDeg] of bearing, counterclockwise seen
+     * from outside the sphere (so the center is inside).
+     */
+    fun circle(center: GeoPoint, radius: Double, stepDeg: Double = 2.0): List<GeoPoint> {
+        val n = maxOf(8, ceil(360.0 / stepDeg).toInt())
+        return List(n) { i -> destination(center, radius, -360.0 * i / n) }
+    }
+
+    /**
+     * Circles around [center] every [spacing] (an angle) up to, but not
+     * including, the antipode.
+     */
+    fun rings(center: GeoPoint, spacing: Double): List<List<GeoPoint>> {
+        require(spacing > 0)
+        return generateSequence(spacing) { it + spacing }.takeWhile { it < PI - 1e-9 }
+            .map { circle(center, it) }.toList()
+    }
+
+    /**
+     * Great circles leaving [center] every [stepDeg] of bearing, from the
+     * center to its antipode, sampled every 10°.
+     */
+    fun rays(center: GeoPoint, stepDeg: Double = 15.0): List<List<GeoPoint>> {
+        val n = maxOf(1, ceil(360.0 / stepDeg).toInt())
+        return List(n) { i ->
+            val bearing = 360.0 * i / n
+            List(19) { k -> destination(center, Math.toRadians(10.0 * k), bearing) }
+        }
+    }
+
+    /**
      * Rhumb line (loxodrome) distance from [a] to [b]: the route at a
      * constant bearing, going the short way around in longitude.
      */

@@ -24,6 +24,7 @@
     <string name="family_azimuthal">Azimuthal</string>
     <string name="family_cylindrical">Cylindrical</string>
     <string name="family_pseudocylindrical">Pseudocylindrical</string>
+    <string name="family_conic">Conic</string>
     <string name="family_double_hemispheric">Two hemispheres</string>
     <string name="longitude_10e">10° E</string>
     <string name="longitude_0">0°</string>
@@ -64,6 +65,16 @@
     <string name="longitude_short">Lon</string>
     <string name="latitude_short">Lat</string>
     <string name="use_center">Center</string>
+    <string name="special_parallels">Tropics and polar circles</string>
+    <string name="distances_title">Distances from a point</string>
+    <string name="distances_hint">Rings every set distance up to the antipode, great circles every 15° of bearing, and optionally the area within a radius. Centered there, the azimuthal equidistant map shows the rings as circles and the bearings as straight lines.</string>
+    <string name="point_center">C</string>
+    <string name="ring_spacing">Ring spacing (km)</string>
+    <string name="circle_radius">Radius (km, optional)</string>
+    <string name="show_rings">Rings</string>
+    <string name="show_rays">Bearings</string>
+    <string name="distances_show">Show distances</string>
+    <string name="distances_clear">Clear distances</string>
     <string name="route_title">Route between two points</string>
     <string name="route_show">Show route</string>
     <string name="route_clear">Clear route</string>

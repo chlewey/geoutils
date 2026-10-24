@@ -37,6 +37,8 @@ Output projections (input bitmaps are equirectangular):
 - **Cylindrical:** equirectangular (plate carrée), Mercator, cylindrical
   equal-area (Lambert, Behrmann, Hobo–Dyer, Gall–Peters), central cylindrical
 - **Pseudocylindrical:** sinusoidal, Mollweide, Equal Earth, Goode homolosine
+- **Conic:** Albers equal-area, Lambert conformal conic, equidistant conic,
+  each with two standard parallels
 - **Two hemispheres:** any hemispheric map on two touching disks, split along
   a meridian (by default 30° W / 150° E) or any great circle, or as northern
   and southern hemispheres
@@ -52,13 +54,16 @@ extended or both).
 ## Spherical model and tools
 
 The first versions assume the Earth is a perfect sphere. On that basis the app
-will:
+can:
 
 - change the coordinate system, for example by moving the center point or
   choosing a different central great circle (the "equator");
 - define the central great circle from two points;
 - find the shortest path (great circle) between two points;
-- find the rhumb line (loxodrome) between two points.
+- find the rhumb line (loxodrome) between two points;
+- draw distance rings and bearing lines from a point, and the area within a
+  radius of it;
+- draw the tropics and the polar circles.
 
 ## Project structure
 

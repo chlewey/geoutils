@@ -216,15 +216,23 @@ Goal: adding a projection is cheap, and any projection can be re-aimed.
     *Both* draws the divided map plus Greenland's eastern part a second time
     in the extended position.
 
-Status: implemented, apart from the conic projections below, which are the
-next step. Hemispheric and two-hemisphere maps are done.
+Status: implemented, including the projection families below (conic,
+hemispheric and two-hemisphere maps) and the overlay tools. Open: whether to
+add the circular globular (see the last item). Rendering the conics also
+exposed two cases where a vertex lying exactly on a cut (the antimeridian, or
+a Goode interruption that falls on a graticule meridian) was drawn on the
+wrong side, which drew chords across conic maps and across Goode's gaps;
+both are fixed and covered by a test.
 
 ### More projection families
 
-- [ ] **Conic:** Albers equal-area, Lambert conformal conic, equidistant
-      conic, each with one or two standard parallels as parameters.
-      Rotation works for conics as for cylindricals, but the cut runs from
-      the apex and the map is a sector of an annulus.
+- [x] **Conic:** Albers equal-area, Lambert conformal conic, equidistant
+      conic, each with two standard parallels as parameters (equal for a
+      tangent cone). Rotation works for conics as for cylindricals, but the
+      cut runs from the apex and the map is a sector of an annulus. Lambert
+      conformal stops at 60° on the side away from the cone (the far pole is
+      infinitely far), and parallels symmetric about the equator are kept
+      from turning the cone into a cylinder.
 - [x] **Polar shortcut for azimuthals:** one-click N / S buttons next to the
       center controls of the azimuthal projections (equidistant, Lambert
       equal-area). They set the center latitude to ±90° and keep the
@@ -269,22 +277,28 @@ next step. Hemispheric and two-hemisphere maps are done.
 
 ### Overlay tools from earlier projects
 
-- [ ] `Geodesy.destination(point, distance, bearing)`: the point reached
+- [x] `Geodesy.destination(point, distance, bearing)`: the point reached
       along a great circle *(from kml2svg `move_coor`)*. The tools below
       build on it.
-- [ ] **Range rings and azimuth rays** from a point: circles every N km (by
+- [x] **Range rings and azimuth rays** from a point: circles every N km (by
       default 1000 km) and bearings every 15° (Tools tab). On the azimuthal
       equidistant map they come out as concentric circles and straight
       lines *(from kml2svg `equi.php`)*.
-- [ ] **Geodesic circle:** everything within a radius of a point, drawn as a
-      closed polygon *(from kml2svg `circle()`)*.
-- [ ] **Special parallels** in the graticule: tropics of Cancer and
+- [x] **Geodesic circle:** everything within a radius of a point, drawn as a
+      closed polygon *(from kml2svg `circle()`)*. Up to 10 000 km, short of
+      a hemisphere, so the filled side is the one around the center.
+- [x] **Special parallels** in the graticule: tropics of Cancer and
       Capricorn and the polar circles, dashed, as an option
       *(from kml2svg `projection.php`)*.
 - [ ] Candidate for the hemispheric family: the **circular equal-area
       globular** (`cirq_ea`), a hemisphere on a disk of radius √2 with
-      circular-arc meridians *(from kml2svg `circ.php`)*. Check first that
-      it really preserves area: its parallels are spaced linearly in φ.
+      circular-arc meridians *(from kml2svg `circ.php`)*. Checked: it is
+      **not** equal-area. The meridians are placed so the area between the
+      central meridian and meridian λ is proportional to λ (the circular
+      segment area matches `getLm`), but each meridian is divided evenly in
+      φ, while equal area would need the area below parallel φ to grow as
+      sin φ. Options: add it as it is (a globular that is equal-area only in
+      longitude), or derive a truly equal-area spacing along each arc first.
 
 ## Milestone 4: Base map library (v0.4)
 

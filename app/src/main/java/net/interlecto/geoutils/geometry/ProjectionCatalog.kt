@@ -3,7 +3,7 @@ package net.interlecto.geoutils.geometry
 import kotlin.math.PI
 import kotlin.math.sqrt
 
-enum class ProjectionFamily { HEMISPHERIC, AZIMUTHAL, CYLINDRICAL, PSEUDOCYLINDRICAL, DOUBLE_HEMISPHERIC }
+enum class ProjectionFamily { HEMISPHERIC, AZIMUTHAL, CYLINDRICAL, PSEUDOCYLINDRICAL, CONIC, DOUBLE_HEMISPHERIC }
 
 /** Which aspect controls a projection accepts. */
 enum class AspectControls {
@@ -235,6 +235,25 @@ object ProjectionCatalog {
         }
     }
 
+    /** The two standard parallels of a conic, each a slider. */
+    private fun standardParallels(first: Double, second: Double) = listOf(
+        ProjectionParam.Angle("parallel1", "First standard parallel", -80.0, 80.0, first),
+        ProjectionParam.Angle("parallel2", "Second standard parallel", -80.0, 80.0, second),
+    )
+
+    val ALBERS = ProjectionType.rotating(
+        "albers", "Albers equal-area conic", ProjectionFamily.CONIC, WORLD_CENTER,
+        params = standardParallels(20.0, 50.0),
+    ) { values -> AlbersNormal(values.angle("parallel1"), values.angle("parallel2")) }
+    val LAMBERT_CONFORMAL_CONIC = ProjectionType.rotating(
+        "lambert-conformal-conic", "Lambert conformal conic", ProjectionFamily.CONIC, WORLD_CENTER,
+        params = standardParallels(30.0, 60.0),
+    ) { values -> LambertConformalConicNormal(values.angle("parallel1"), values.angle("parallel2")) }
+    val EQUIDISTANT_CONIC = ProjectionType.rotating(
+        "equidistant-conic", "Equidistant conic", ProjectionFamily.CONIC, WORLD_CENTER,
+        params = standardParallels(20.0, 60.0),
+    ) { values -> EquidistantConicNormal(values.angle("parallel1"), values.angle("parallel2")) }
+
     val DOUBLE_ORTHOGRAPHIC = ProjectionType.doubleHemispheric(
         "double-orthographic", "Orthographic (two hemispheres)", SPLIT_MERIDIAN, OrthographicNormal,
     )
@@ -258,6 +277,7 @@ object ProjectionCatalog {
         AZIMUTHAL_EQUIDISTANT, LAMBERT_AZIMUTHAL,
         EQUIRECTANGULAR, MERCATOR, LAMBERT_CYLINDRICAL, BEHRMANN, HOBO_DYER, GALL_PETERS, CENTRAL_CYLINDRICAL,
         SINUSOIDAL, MOLLWEIDE, EQUAL_EARTH, GOODE,
+        ALBERS, LAMBERT_CONFORMAL_CONIC, EQUIDISTANT_CONIC,
         DOUBLE_ORTHOGRAPHIC, DOUBLE_AZIMUTHAL_EQUIDISTANT, DOUBLE_LAMBERT_AZIMUTHAL, DOUBLE_MOLLWEIDE, DOUBLE_NICOLOSI,
     )
 

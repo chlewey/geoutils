@@ -15,6 +15,10 @@ import kotlin.math.roundToLong
 object SvgWriter {
 
     const val GRATICULE_COLOR = 0x59FFFFFF
+    const val SPECIAL_PARALLEL_COLOR = 0xA6FFFFFF.toInt()
+
+    /** Dash and gap of the special parallels, in pixels at a stroke scale of 1. */
+    val SPECIAL_PARALLEL_DASH = floatArrayOf(6f, 4f)
     const val OUTLINE_COLOR = 0xFF9FB3C8.toInt()
 
     fun write(scene: MapScene, rasterDataUri: String?, title: String? = null): String = buildString {
@@ -40,6 +44,21 @@ object SvgWriter {
             appendColor("stroke", GRATICULE_COLOR)
             append(" stroke-width=\"").appendNumber(0.75 * s).append("\">\n")
             for (line in scene.graticule) {
+                append("    <path d=\"")
+                appendPath(line, closed = false)
+                append("\"/>\n")
+            }
+            append("  </g>\n")
+        }
+
+        if (scene.specialParallels.isNotEmpty()) {
+            append("  <g id=\"special-parallels\" fill=\"none\"")
+            appendColor("stroke", SPECIAL_PARALLEL_COLOR)
+            append(" stroke-width=\"").appendNumber(0.75 * s).append('"')
+            append(" stroke-dasharray=\"")
+            appendNumber(SPECIAL_PARALLEL_DASH[0] * s.toDouble()).append(',')
+            appendNumber(SPECIAL_PARALLEL_DASH[1] * s.toDouble()).append("\">\n")
+            for (line in scene.specialParallels) {
                 append("    <path d=\"")
                 appendPath(line, closed = false)
                 append("\"/>\n")

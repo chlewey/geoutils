@@ -32,6 +32,7 @@ object SceneBuilder {
         kml: KmlDocument?,
         showGraticule: Boolean,
         attribution: String? = null,
+        showSpecialParallels: Boolean = false,
     ): MapScene {
         val bounds = projection.bounds
         val height = (size * bounds.height / bounds.width).roundToInt()
@@ -45,6 +46,11 @@ object SceneBuilder {
             outlines = projection.outline().map(toPixels),
             graticule = if (showGraticule) {
                 Graticule.lines().flatMap(projection::projectLine).map(toPixels)
+            } else {
+                emptyList()
+            },
+            specialParallels = if (showSpecialParallels) {
+                Graticule.specialParallels().flatMap(projection::projectLine).map(toPixels)
             } else {
                 emptyList()
             },

@@ -82,4 +82,33 @@ class GeodesyTest {
         assertNull(Geodesy.equatorThrough(london, london))
         assertNull(Geodesy.equatorThrough(GeoPoint(0.0, 0.0), GeoPoint(180.0, 0.0)))
     }
+
+    @Test
+    fun destinationAlongTheEquatorAndMeridian() {
+        val origin = GeoPoint(0.0, 0.0)
+        val east = Geodesy.destination(origin, Math.PI / 2, 90.0)
+        assertEquals(90.0, east.lon, 1e-9)
+        assertEquals(0.0, east.lat, 1e-9)
+        assertEquals(90.0, Geodesy.destination(origin, Math.PI / 2, 0.0).lat, 1e-9)
+        // London to New York and back: the distance and bearing reproduce the point.
+        val d = Geodesy.greatCircleDistance(london, newYork)
+        val there = Geodesy.destination(london, d, Geodesy.initialBearing(london, newYork))
+        assertTrue(there.toVec3().angleTo(newYork.toVec3()) < 1e-9)
+    }
+
+    @Test
+    fun circlesRingsAndRays() {
+        val radius = 1000.0 / Sphere.EARTH_RADIUS_KM
+        for (p in Geodesy.circle(london, radius)) {
+            assertEquals(radius, Geodesy.greatCircleDistance(london, p), 1e-9)
+        }
+        // Every 1000 km up to the antipode, 20 015 km away.
+        assertEquals(20, Geodesy.rings(london, radius).size)
+        val rays = Geodesy.rays(london, 15.0)
+        assertEquals(24, rays.size)
+        val antipode = GeoPoint(london.lon + 180.0, -london.lat)
+        for (ray in rays) {
+            assertTrue(ray.last().toVec3().angleTo(antipode.toVec3()) < 1e-9)
+        }
+    }
 }

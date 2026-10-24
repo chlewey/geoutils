@@ -103,8 +103,10 @@ class ShiftedProjection(private val inner: Projection, shiftDeg: Double) : Proje
         for (p in path) {
             val u = Vec2(p.x - shift, p.y)
             if (prev != null) {
+                // Beyond an edge means what [wrap] means (strictly past ±π), so a
+                // point right on the edge stays on the side it is drawn on.
                 for (edge in listOf(-PI, PI)) {
-                    if ((prev.x - edge) * (u.x - edge) < 0) {
+                    if (beyond(prev.x, edge) != beyond(u.x, edge)) {
                         val y = prev.y + (u.y - prev.y) * (edge - prev.x) / (u.x - prev.x)
                         pieces.last().add(Vec2(edgeSeenFrom(edge, prev.x), y))
                         pieces.add(mutableListOf(Vec2(edgeSeenFrom(edge, u.x), y)))
@@ -116,6 +118,8 @@ class ShiftedProjection(private val inner: Projection, shiftDeg: Double) : Proje
         }
         return pieces.filter { it.size >= 2 }
     }
+
+    private fun beyond(x: Double, edge: Double) = if (edge < 0) x < edge else x > edge
 
     /**
      * Where the crossing at [edge] ends up on the map, seen from a point at

@@ -162,8 +162,10 @@ internal class SeamClipper(private val base: NormalProjection, seams: List<Seam>
         val meridian = a.x == b.x
         private val dLambda = sign(b.x - a.x)
         private val dPhi = sign(b.y - a.y)
-        private val normal = Vec3(-sin(a.x), cos(a.x), 0.0)
-        private val direction = Vec3(cos(a.x), sin(a.x), 0.0)
+        // Exact on the antimeridian: sin(π) is not quite 0 in floating point, and
+        // the side test must agree with localLambda for points right on the seam.
+        private val normal = if (abs(a.x) == PI) Vec3(0.0, -1.0, 0.0) else Vec3(-sin(a.x), cos(a.x), 0.0)
+        private val direction = if (abs(a.x) == PI) Vec3(-1.0, 0.0, 0.0) else Vec3(cos(a.x), sin(a.x), 0.0)
         private val sinPhi = sin(a.y)
         val lo = if (meridian) min(a.y, b.y) else min(a.x, b.x)
         val hi = if (meridian) maxOf(a.y, b.y) else maxOf(a.x, b.x)
@@ -185,6 +187,22 @@ internal class SeamClipper(private val base: NormalProjection, seams: List<Seam>
             } else {
                 val lambda = localLambda(m.x, m.y)
                 if (lambda in lo..hi) Vec2(lambda, a.y) else null
+            }
+        }
+
+        /**
+         * A vertex lying right on this segment, moved just off it to the side
+         * [side] puts it on, the same test that decides crossings; null if the
+         * vertex isn't on the segment. Otherwise a vertex on an interruption
+         * would be drawn on whichever lobe the projection picks for that exact
+         * longitude, maybe across the gap from the rest of its path.
+         */
+        fun nudge(lambda: Double, phi: Double, q: Vec3): Vec2? {
+            val s = if (side(q) >= 0) EPS else -EPS
+            return if (meridian) {
+                if (abs(lambda - a.x) < ON_SEAM && phi in lo..hi) Vec2(wrapLambda(a.x + s), phi) else null
+            } else {
+                if (abs(phi - a.y) < ON_SEAM && lambda in lo..hi) Vec2(lambda, a.y + s) else null
             }
         }
 
@@ -398,7 +416,15 @@ internal class SeamClipper(private val base: NormalProjection, seams: List<Seam>
         val count = if (closed) pts.size else pts.size - 1
         for (i in pts.indices) {
             val a = pts[i]
-            raw += Point(localLambda(a.x, a.y), asin(a.z.coerceIn(-1.0, 1.0)), abs(a.z) > 1 - POLE_EPS)
+            val atPole = abs(a.z) > 1 - POLE_EPS
+            var lambda = localLambda(a.x, a.y)
+            var phi = asin(a.z.coerceIn(-1.0, 1.0))
+            if (!atPole) {
+                for (seam in segments) for (segment in seam) {
+                    segment.nudge(lambda, phi, a)?.let { lambda = it.x; phi = it.y }
+                }
+            }
+            raw += Point(lambda, phi, atPole)
             if (i < count) raw += crossings(a, pts[(i + 1) % pts.size])
         }
         return splitPoles(raw, closed)
@@ -479,6 +505,9 @@ internal class SeamClipper(private val base: NormalProjection, seams: List<Seam>
 
     private companion object {
         const val EPS = 1e-9
+
+        /** How close to a seam a vertex counts as lying on it. */
+        const val ON_SEAM = 1e-12
         const val POLE_EPS = 1e-12
     }
 }

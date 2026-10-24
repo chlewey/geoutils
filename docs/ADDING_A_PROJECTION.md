@@ -36,7 +36,9 @@ object MyProjectionNormal : NormalProjection {
   allocate in them.
 
 Put the class in the file for its family: `Azimuthal.kt`, `Cylindrical.kt`,
-`Pseudocylindrical.kt` or `Hemispheric.kt`.
+`Pseudocylindrical.kt`, `Conic.kt` or `Hemispheric.kt`. A conic extends
+`ConicNormal`, which only needs the cone constant and the radius of each
+parallel.
 
 ### Choosing the clip
 

@@ -1,5 +1,6 @@
 package net.interlecto.geoutils.ui.map
 
+import net.interlecto.geoutils.geometry.AspectControls
 import net.interlecto.geoutils.geometry.GeoPoint
 import net.interlecto.geoutils.geometry.ProjectionFamily
 import net.interlecto.geoutils.geometry.ProjectionType
@@ -19,9 +20,12 @@ enum class AzimuthMode(val range: ClosedFloatingPointRange<Double>) {
 }
 
 /**
- * Where one projection is aimed. Latitude applies only while
+ * Where one projection is aimed, and its own parameters.
+ *
+ * For projections that rotate the sphere, latitude applies only while
  * [latitudeEnabled] and the azimuth only while [azimuthMode] isn't OFF;
- * otherwise both are 0, which is the normal aspect for whole-sphere maps.
+ * otherwise both are 0, the normal aspect. Projections tied to geography
+ * (Goode) use only the longitude and [southUp].
  */
 data class ViewSettings(
     val longitude: Double,
@@ -29,10 +33,15 @@ data class ViewSettings(
     val latitudeEnabled: Boolean = true,
     val azimuthMode: AzimuthMode = AzimuthMode.OFF,
     val azimuth: Double = 0.0,
+    val southUp: Boolean = false,
+    val params: Map<String, String> = emptyMap(),
 ) {
-    val center: GeoPoint get() = GeoPoint(longitude, if (latitudeEnabled) latitude else 0.0)
-
-    val effectiveAzimuth: Double get() = azimuthMode.normalize(azimuth)
+    /** The center and azimuth to build [type] with. */
+    fun aspectFor(type: ProjectionType): Pair<GeoPoint, Double> = when (type.aspect) {
+        AspectControls.ROTATE ->
+            GeoPoint(longitude, if (latitudeEnabled) latitude else 0.0) to azimuthMode.normalize(azimuth)
+        AspectControls.MERIDIAN_AND_FLIP -> GeoPoint(longitude, 0.0) to if (southUp) 180.0 else 0.0
+    }
 
     companion object {
         /** Used for azimuthal maps until the device location is known. */

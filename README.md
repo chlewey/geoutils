@@ -35,11 +35,13 @@ Output projections (input bitmaps are equirectangular):
   equal-area (Lambert, Behrmann, Hobo–Dyer, Gall–Peters), central cylindrical
 - **Pseudocylindrical:** sinusoidal, Mollweide, Equal Earth, Goode homolosine
 
-Every projection can be aimed at any center and turned by an azimuth: the
-sphere is rotated so the chosen point is at the middle of the map, then
+Continuous projections can be aimed at any center and turned by an azimuth:
+the sphere is rotated so the chosen point is at the middle of the map, then
 projected. Cylindrical and pseudocylindrical maps start in the normal aspect
 (latitude and azimuth off); turning those on gives oblique and transverse
-aspects.
+aspects. Interrupted maps (Goode) stay tied to geography: only the central
+meridian and north/south up change, plus Goode's Greenland option (divided,
+extended or both).
 
 ## Spherical model and tools
 
@@ -67,12 +69,15 @@ net/interlecto/geoutils/
 
 ## Status
 
-Milestones 1 and 2 are implemented. Open the bundled Blue Marble or your own
+Milestones 1 to 3 are implemented. Open the bundled Blue Marble or your own
 equirectangular image and overlay a KML file. Project them in any of 14
 projections (orthographic, azimuthal, cylindrical and pseudocylindrical),
-aimed at any center and azimuth, including oblique and transverse aspects.
-Zoom and pan, and save or share the result as SVG or PNG. See
-[ROADMAP.md](ROADMAP.md) for what's next.
+aimed at any center and azimuth, including oblique and transverse aspects,
+or with the equator through two chosen points. Draw great-circle and rhumb
+routes with their distances. Zoom and pan, and save or share the result as
+SVG or PNG. See [ROADMAP.md](ROADMAP.md) for what's next.
+
+To add a projection, see [docs/ADDING_A_PROJECTION.md](docs/ADDING_A_PROJECTION.md).
 
 ## Building
 

@@ -36,17 +36,25 @@ class SphereFrame(center: GeoPoint, azimuthDeg: Double) {
  * sphere is rotated so that [center] lands on (0°, 0°) with the azimuth
  * bearing pointing north, then projected with the normal formulas. Clipping
  * and cutting happen in the rotated system.
+ *
+ * With a [region], only that box (in rotated coordinates) is drawn, instead
+ * of the base's own clipping. A [CompositeProjection] uses this to repeat
+ * part of the sphere elsewhere on the map.
  */
 class RotatedProjection(
     val base: NormalProjection,
     val center: GeoPoint,
     val azimuthDeg: Double = 0.0,
+    region: LonLatBox? = null,
 ) : Projection {
 
     private val frame = SphereFrame(center, azimuthDeg)
-    private val clipper: Clipper = when (val clip = base.clip) {
-        is Clip.Cap -> CapClipper(base, clip.minCos)
-        is Clip.Seams -> SeamClipper(base, clip.seams)
+    private val clipper: Clipper = when {
+        region != null -> BoxClipper(base, region)
+        else -> when (val clip = base.clip) {
+            is Clip.Cap -> CapClipper(base, clip.minCos)
+            is Clip.Seams -> SeamClipper(base, clip.seams)
+        }
     }
 
     override val bounds: Bounds get() = base.bounds
@@ -75,6 +83,7 @@ class RotatedProjection(
         val qx = cosPhi * cos(out[0])
         val qy = cosPhi * sin(out[0])
         val qz = sin(out[1])
+        if (!clipper.isVisible(qx, qy, qz)) return false
         val c = frame.c
         val r = frame.r
         val u = frame.u
@@ -86,7 +95,7 @@ class RotatedProjection(
         return true
     }
 
-    override fun outline(): List<Vec2> = clipper.outline()
+    override fun outline(): List<List<Vec2>> = clipper.outline()
 
     override fun projectLine(points: List<GeoPoint>): List<List<Vec2>> =
         clipper.line(densify(points, closed = false).map(frame::toLocal))

@@ -159,7 +159,7 @@ Mollweide, Equal Earth, Goode):
       settings) while the app runs, so switching back and forth doesn't lose
       it.
 
-Known issue (to fix in milestone 3): Goode homolosine is drawn through the
+Known issue (fixed in milestone 3): Goode homolosine is drawn through the
 generic rotation wrapper, so latitude and azimuth tilt the sphere under its
 lobes, which gives incoherent maps. Its lobes and cuts are laid out for the
 continents; only the central meridian may move them.
@@ -175,45 +175,90 @@ Mercator, and pass forward/inverse round trips in normal and oblique aspects.
 
 Goal: adding a projection is cheap, and any projection can be re-aimed.
 
-- [ ] Projection registry: each projection declares an id, display name,
-      parameters (with ranges and defaults) and capabilities (has an inverse,
-      is interrupted, is azimuthal). The UI is generated from that description.
-- [ ] Set a new "equator" (central great circle) from **two points**, on top
-      of the rotated coordinate system from milestone 2.
-- [ ] **Discontinuous (interrupted) projections don't use the standard
+- [x] Projection registry: each projection declares an id, display name,
+      family, default longitude, aspect controls (rotate, or central meridian
+      and north/south up) and its own parameters (angles with ranges and
+      defaults, or choices). The UI builds the parameter and aspect controls
+      from that description.
+- [x] Set a new "equator" (central great circle) from **two points**, on top
+      of the rotated coordinate system from milestone 2 (View tab).
+- [x] Geodesy tools in `geometry`, drawable as overlays (Tools tab):
+  - [x] Great-circle (shortest) path, distance and initial bearing between
+        two points.
+  - [x] Rhumb line (loxodrome) path, distance and bearing between two points.
+- [x] Contributor guide: [docs/ADDING_A_PROJECTION.md](docs/ADDING_A_PROJECTION.md).
+- [x] Equirectangular's standard parallel is now a parameter (0°–70°).
+- [x] **Discontinuous (interrupted) projections don't use the standard
       aspect parameters.** Goode homolosine, and any future interrupted or
       otherwise discontinuous projection, declares its own tailored
       parameters in the registry instead of the generic center/latitude/
       azimuth:
-  - **Central meridian:** allowed; it turns the sphere about the polar axis,
+  - [x] **Central meridian:** allowed; it turns the sphere about the polar axis,
     so the whole map, lobes included, shifts with it.
-  - **Latitude and azimuth:** not available, since they give incoherent
+  - [x] **Latitude and azimuth:** not available, since they give incoherent
     results with lobes.
-  - **Orientation:** at most a toggle between 0° and 180° (north up or
+  - [x] **Orientation:** at most a toggle between 0° and 180° (north up or
     south up). This turns the finished map in the plane, keeping the lobes
     tied to geography; it does not rotate the sphere.
-  - **Goode's Greenland option:** the standard northern interruption at
+  - [x] **Goode's Greenland option:** the standard northern interruption at
     40° W splits Greenland. Offer *divided* (standard), *extended* (the
     western lobe extended east so Greenland is whole), or *both* (Greenland
-    whole in the extended lobe and also shown split).
+    whole in the extended lobe and also shown split). *Extended* moves the
+    cut to 10° W north of 60° N (a stepped cut along 60° N), which keeps
+    Greenland and Iceland whole and leaves West Africa and Ireland alone.
+    *Both* draws the divided map plus Greenland's eastern part a second time
+    in the extended position.
 
-### More projection families
+Status: implemented, apart from the projection families below, which are
+the next step.
+
+### More projection families (not started)
 
 - [ ] **Conic:** Albers equal-area, Lambert conformal conic, equidistant
       conic, each with one or two standard parallels as parameters.
       Rotation works for conics as for cylindricals, but the cut runs from
       the apex and the map is a sector of an annulus.
-- [ ] **Hemispheric:** one hemisphere on its own (for example an azimuthal
-      or orthographic map of the eastern or western hemisphere), with a
-      fixed, named center.
-- [ ] **Double hemispheric:** two hemispheres side by side in one image
-      (western/eastern, or northern/southern), each clipped to its own disk.
-      This needs a projection made of several sub-maps, the same structure
-      interrupted projections need.
-- [ ] Geodesy tools in `geometry`, drawable as overlays:
-  - [ ] Great-circle (shortest) path and distance between two points.
-  - [ ] Rhumb line (loxodrome) and distance between two points.
-- [ ] Contributor guide: how to add a projection (interface, tests, registry entry).
+- [ ] **Polar shortcut for azimuthals:** one-click N / S buttons next to the
+      center controls of the azimuthal projections (equidistant, Lambert
+      equal-area). They set the center latitude to ±90° and keep the
+      longitude, which then sets which meridian points down (or up).
+- [ ] **Hemispheric:** one hemisphere on its own, clipped to a disk at 90°
+      from the center. Parametrized like the azimuthals (center longitude,
+      latitude, azimuth), plus a quick **N / Equator / S** setting for the
+      latitude (90°, 0°, −90°). Projections:
+  - [ ] Orthographic (the current one, which is already hemispheric).
+  - [ ] Azimuthal equidistant, hemisphere only (disk radius π/2).
+  - [ ] Lambert azimuthal equal-area, hemisphere only (disk radius √2).
+  - [ ] Mollweide, hemisphere only: the circle between ±90° from the central
+        meridian, in the rotated frame.
+  - [ ] Nicolosi globular (new; hemispheric by nature).
+
+  For the non-azimuthal ones (Mollweide, Nicolosi) the disk's horizontal
+  line is the "equator" of the rotated frame.
+- [ ] **Double hemispheric:** any of the hemispheric projections above, as two
+      disks tangent to each other in one image. This needs a projection made
+      of several sub-maps, the same structure interrupted projections use
+      (`Composite`). Two modes:
+  - **Polar** (northern and southern hemispheres). Longitude is the meridian
+    shared by both disks at the tangent point (the point on the equator at
+    that longitude). Azimuth is the image angle of the line through both
+    disk centers, which is that meridian (and the "equator" of each disk for
+    Mollweide and Nicolosi); 0° puts the disks side by side. Latitude does
+    not apply.
+  - **Non-polar** (for example western and eastern hemispheres). Longitude
+    and latitude are the tangent point; latitude is grayed out by default
+    (0°). Azimuth is the bearing of the split great circle at the tangent
+    point; 0° runs north–south, so the disks sit side by side with north up.
+    With latitude 0° the longitude *is* the split meridian, so the default
+    longitude is **30° W** (split at 30° W / 150° E), not the device's
+    longitude.
+  - Both modes are the same construction: a frame at the tangent point with
+    the split circle as its "meridian" and the two disk centers 90° to
+    either side. Polar mode is that frame with latitude fixed at 0° and the
+    split fixed on the equator (bearing 90°), with the azimuth applied as a
+    rotation of the finished image. Hence the azimuth of the two modes
+    differs by 90°: polar names the line of centers, non-polar names the
+    tangent.
 
 ## Milestone 4: Base map library (v0.4)
 
@@ -229,6 +274,20 @@ Goal: keep and manage more than one base map.
       configurations" (base map + overlays + projection + parameters).
 - [ ] Large-image handling: tiled or downsampled decoding so 8K–21K source images
       don't exhaust memory.
+
+### Export options
+
+- [ ] Export dialog with configurable parameters before saving or sharing
+      (SVG and PNG):
+  - **Clip:** the region of the map to export. By default, whatever is
+    shown on screen (the viewer's current zoom and pan, such as the
+    width-fitted Mercator with its top and bottom cut off). Other choices:
+    the whole map, or a custom rectangle.
+  - **Scale:** output size, as a pixel width (height follows from the clip)
+    or a multiple of the on-screen size. PNG renders at that size; SVG uses
+    it for its dimensions and the embedded raster's resolution.
+- [ ] The SVG clips to the chosen region (`viewBox`), and its embedded raster
+      covers only that region.
 
 ### Places (center presets)
 
@@ -279,7 +338,8 @@ panning a fixed image.
       reuse it).
 - [ ] Tap a feature to see its KML name and description; tap two points to draw a
       great-circle or rhumb path between them.
-- [ ] Export the current view at a chosen resolution or as SVG.
+- [ ] Export the current view at a chosen resolution or as SVG (builds on
+      the export options from milestone 4).
 
 ## Later / ideas
 

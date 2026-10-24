@@ -129,12 +129,13 @@ object EqualEarthNormal : NormalProjection {
  * Goode homolosine, interrupted: sinusoidal between ±40°44′ and Mollweide
  * beyond, in six lobes (two north, four south) arranged to keep the
  * continents whole.
+ *
+ * The standard northern interruption at 40° W splits Greenland. With
+ * [extendedGreenland], the western (American) lobe reaches east to 10° W
+ * north of 60° N, so Greenland (and Iceland) stay whole; the cut then steps
+ * along 60° N.
  */
-object GoodeHomolosineNormal : NormalProjection {
-
-    /** Latitude where the sinusoidal and Mollweide parts meet, and Mollweide's vertical shift there. */
-    private const val PHI_T = 0.7109889596207567
-    private const val Y_SHIFT = 0.0528035274542
+class GoodeHomolosineNormal(private val extendedGreenland: Boolean = false) : NormalProjection {
 
     private class Lobe(minDeg: Double, centerDeg: Double, maxDeg: Double) {
         val min = Math.toRadians(minDeg)
@@ -142,7 +143,6 @@ object GoodeHomolosineNormal : NormalProjection {
         val max = Math.toRadians(maxDeg)
     }
 
-    private val north = listOf(Lobe(-180.0, -100.0, -40.0), Lobe(-40.0, 30.0, 180.0))
     private val south = listOf(
         Lobe(-180.0, -160.0, -100.0),
         Lobe(-100.0, -60.0, -20.0),
@@ -153,23 +153,57 @@ object GoodeHomolosineNormal : NormalProjection {
     override val bounds = Bounds(-PI, -(SQRT2 - Y_SHIFT), PI, SQRT2 - Y_SHIFT)
 
     override val clip = Clip.Seams(
-        listOf(Seam.ANTIMERIDIAN, Seam(Math.toRadians(-40.0), 0.0, PI / 2)) +
-            listOf(-100.0, -20.0, 80.0).map { Seam(Math.toRadians(it), -PI / 2, 0.0) },
+        listOf(Seam.ANTIMERIDIAN, northernCut()) +
+            listOf(-100.0, -20.0, 80.0).map { Seam.meridian(Math.toRadians(it), fromNorth = false, tipPhi = 0.0) },
     )
 
+    private fun northernCut(): Seam =
+        if (extendedGreenland) {
+            Seam(
+                listOf(
+                    Vec2(GREENLAND_EAST, PI / 2),
+                    Vec2(GREENLAND_EAST, GREENLAND_STEP),
+                    Vec2(NORTH_CUT, GREENLAND_STEP),
+                    Vec2(NORTH_CUT, 0.0),
+                ),
+            )
+        } else {
+            Seam.meridian(NORTH_CUT, fromNorth = true, tipPhi = 0.0)
+        }
+
+    /** Longitude where the two northern lobes meet, at latitude [phi]. */
+    private fun northBoundary(phi: Double): Double =
+        if (extendedGreenland && phi >= GREENLAND_STEP) GREENLAND_EAST else NORTH_CUT
+
     override fun forward(lambda: Double, phi: Double, out: DoubleArray) {
-        val lobes = if (phi >= 0) north else south
-        val lobe = lobes.firstOrNull { lambda <= it.max } ?: lobes.last()
-        homolosine(lambda - lobe.center, phi, out)
-        out[0] += lobe.center
+        val center = if (phi >= 0) {
+            if (lambda < northBoundary(phi)) WEST_CENTER else EAST_CENTER
+        } else {
+            (south.firstOrNull { lambda <= it.max } ?: south.last()).center
+        }
+        homolosine(lambda - center, phi, out)
+        out[0] += center
     }
 
     override fun inverse(x: Double, y: Double, out: DoubleArray): Boolean {
         if (abs(y) > bounds.maxY) return false
-        for (lobe in if (y >= 0) north else south) {
+        if (y >= 0) {
+            for (center in listOf(WEST_CENTER, EAST_CENTER)) {
+                if (!inverseHomolosine(x - center, y, out)) continue
+                val lambda = out[0] + center
+                val boundary = northBoundary(out[1])
+                val inLobe = if (center == WEST_CENTER) lambda <= boundary + TOL else lambda >= boundary - TOL
+                if (inLobe && abs(lambda) <= PI + TOL) {
+                    out[0] = lambda
+                    return true
+                }
+            }
+            return false
+        }
+        for (lobe in south) {
             if (!inverseHomolosine(x - lobe.center, y, out)) continue
             val lambda = out[0] + lobe.center
-            if (lambda >= lobe.min - 1e-12 && lambda <= lobe.max + 1e-12) {
+            if (lambda >= lobe.min - TOL && lambda <= lobe.max + TOL) {
                 out[0] = lambda
                 return true
             }
@@ -192,4 +226,26 @@ object GoodeHomolosineNormal : NormalProjection {
         } else {
             MollweideNormal.inverse(x, y + Y_SHIFT * sign(y), out)
         }
+
+    companion object {
+        /** Latitude where the sinusoidal and Mollweide parts meet, and Mollweide's vertical shift there. */
+        private const val PHI_T = 0.7109889596207567
+        private const val Y_SHIFT = 0.0528035274542
+        private const val TOL = 1e-12
+
+        private val WEST_CENTER = Math.toRadians(-100.0)
+        private val EAST_CENTER = Math.toRadians(30.0)
+        private val NORTH_CUT = Math.toRadians(-40.0)
+
+        /** Extended Greenland: north of [GREENLAND_STEP] the cut moves east to [GREENLAND_EAST]. */
+        val GREENLAND_STEP = Math.toRadians(60.0)
+        val GREENLAND_EAST = Math.toRadians(-10.0)
+
+        /**
+         * The part of the sphere that changes lobe when Greenland is extended,
+         * shrunk by a hair so its own edges at 10° W and 60° N fall inside the
+         * western lobe rather than on the lobe boundary.
+         */
+        val GREENLAND_BOX = LonLatBox(NORTH_CUT, GREENLAND_EAST - 1e-9, GREENLAND_STEP + 1e-9, PI / 2)
+    }
 }

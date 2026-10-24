@@ -57,7 +57,7 @@ object SceneCanvasRenderer {
             }
         }
 
-        val outline = Path().apply { addPolyline(scene.outline, closed = true) }
+        val outline = Path().apply { for (loop in scene.outlines) addPolyline(loop, closed = true) }
         canvas.drawPath(outline, strokePaint(SvgWriter.OUTLINE_COLOR, 1.5f * s))
 
         scene.attribution?.let { text ->

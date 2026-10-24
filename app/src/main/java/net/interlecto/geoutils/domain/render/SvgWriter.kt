@@ -26,7 +26,7 @@ object SvgWriter {
         if (title != null) append("  <title>").append(escape(title)).append("</title>\n")
 
         append("  <defs>\n    <clipPath id=\"map-clip\"><path d=\"")
-        appendPath(scene.outline, closed = true)
+        for (loop in scene.outlines) appendPath(loop, closed = true)
         append("\"/></clipPath>\n  </defs>\n")
 
         if (rasterDataUri != null) {
@@ -54,7 +54,7 @@ object SvgWriter {
         append("  <path id=\"outline\" fill=\"none\"")
         appendColor("stroke", OUTLINE_COLOR)
         append(" stroke-width=\"").appendNumber(1.5 * s).append("\" d=\"")
-        appendPath(scene.outline, closed = true)
+        for (loop in scene.outlines) appendPath(loop, closed = true)
         append("\"/>\n")
 
         if (scene.attribution != null) {

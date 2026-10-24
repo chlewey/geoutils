@@ -29,10 +29,17 @@ import net.interlecto.geoutils.data.image.RasterLoader
 import net.interlecto.geoutils.data.kml.KmlRepository
 import net.interlecto.geoutils.data.location.LocationProvider
 import net.interlecto.geoutils.data.repository.BaseMapRepository
+import net.interlecto.geoutils.data.settings.PointPair
+import net.interlecto.geoutils.data.settings.SavedPoints
+import net.interlecto.geoutils.data.settings.SavedPointsRepository
+import net.interlecto.geoutils.domain.model.FeatureStyle
+import net.interlecto.geoutils.domain.model.Geometry
 import net.interlecto.geoutils.domain.model.KmlDocument
+import net.interlecto.geoutils.domain.model.Placemark
 import net.interlecto.geoutils.domain.model.MapScene
 import net.interlecto.geoutils.domain.render.SceneBuilder
 import net.interlecto.geoutils.geometry.GeoPoint
+import net.interlecto.geoutils.geometry.Geodesy
 import net.interlecto.geoutils.geometry.ProjectionCatalog
 import net.interlecto.geoutils.geometry.ProjectionType
 import net.interlecto.geoutils.geometry.RasterImage
@@ -54,6 +61,9 @@ data class MapUiState(
     /** Views the user has changed, by projection id; others use [ViewSettings.defaultFor]. */
     val views: Map<String, ViewSettings> = emptyMap(),
     val deviceLocation: GeoPoint? = null,
+    val route: Route? = null,
+    /** Last points used, to fill in the point fields (also after a restart). */
+    val savedPoints: SavedPoints = SavedPoints(),
     val showGraticule: Boolean = true,
     val scene: MapScene? = null,
     val rendering: Boolean = false,
@@ -63,8 +73,11 @@ data class MapUiState(
 
     val view: ViewSettings get() = views[projectionId] ?: ViewSettings.defaultFor(projectionType, deviceLocation)
 
-    val renderInput
-        get() = RenderInput(source, kml, projectionType, view.center, view.effectiveAzimuth, showGraticule)
+    val renderInput: RenderInput
+        get() {
+            val (center, azimuth) = view.aspectFor(projectionType)
+            return RenderInput(source, kml, projectionType, center, azimuth, view.params, route, showGraticule)
+        }
 }
 
 data class RenderInput(
@@ -73,7 +86,17 @@ data class RenderInput(
     val projection: ProjectionType,
     val center: GeoPoint,
     val azimuth: Double,
+    val params: Map<String, String>,
+    val route: Route?,
     val showGraticule: Boolean,
+)
+
+/** A route drawn on the map between two points, as a great circle, a rhumb line or both. */
+data class Route(
+    val from: GeoPoint,
+    val to: GeoPoint,
+    val greatCircle: Boolean = true,
+    val rhumb: Boolean = false,
 )
 
 sealed interface MapEvent {
@@ -89,6 +112,7 @@ class MapViewModel @Inject constructor(
     private val kmlRepository: KmlRepository,
     private val exporter: MapExporter,
     private val locationProvider: LocationProvider,
+    private val savedPointsRepository: SavedPointsRepository,
     @DefaultDispatcher private val cpu: CoroutineDispatcher,
 ) : ViewModel() {
 
@@ -108,6 +132,9 @@ class MapViewModel @Inject constructor(
                 val library = baseMaps.map { MapSource(it.name, it.uri, it.attribution) }
                 _state.update { it.copy(library = library, source = it.source ?: library.firstOrNull()) }
             }
+        }
+        viewModelScope.launch {
+            savedPointsRepository.points.collect { saved -> _state.update { it.copy(savedPoints = saved) } }
         }
         viewModelScope.launch {
             state.map { it.renderInput }.distinctUntilChanged().collectLatest(::render)
@@ -155,6 +182,8 @@ class MapViewModel @Inject constructor(
 
     fun setLongitude(lon: Double) = updateView { it.copy(longitude = lon) }
 
+    fun setLatitude(lat: Double) = updateView { it.copy(latitude = lat) }
+
     /** Turning latitude off returns it to 0 (normal aspect). */
     fun setLatitudeEnabled(enabled: Boolean) =
         updateView { it.copy(latitudeEnabled = enabled, latitude = if (enabled) it.latitude else 0.0) }
@@ -163,6 +192,40 @@ class MapViewModel @Inject constructor(
 
     fun setAzimuthMode(mode: AzimuthMode) =
         updateView { it.copy(azimuthMode = mode, azimuth = mode.normalize(it.azimuth)) }
+
+    fun setSouthUp(southUp: Boolean) = updateView { it.copy(southUp = southUp) }
+
+    fun setParam(key: String, value: String) = updateView { it.copy(params = it.params + (key to value)) }
+
+    /**
+     * Aims the map so the great circle through [a] and [b] is its equator,
+     * centered between them with [b] to the right. This needs latitude and
+     * azimuth, so it turns them on.
+     */
+    fun setEquatorThrough(a: GeoPoint, b: GeoPoint) {
+        val aim = Geodesy.equatorThrough(a, b)
+        if (aim == null) {
+            viewModelScope.launch { message(R.string.msg_equator_undefined) }
+            return
+        }
+        val (center, azimuth) = aim
+        viewModelScope.launch { savedPointsRepository.saveEquator(PointPair(a, b)) }
+        updateView {
+            val mode = if (it.azimuthMode == AzimuthMode.OFF) AzimuthMode.SIGNED else it.azimuthMode
+            it.copy(
+                longitude = center.lon,
+                latitude = center.lat,
+                latitudeEnabled = true,
+                azimuthMode = mode,
+                azimuth = mode.normalize(azimuth),
+            )
+        }
+    }
+
+    fun setRoute(route: Route?) {
+        if (route != null) viewModelScope.launch { savedPointsRepository.saveRoute(PointPair(route.from, route.to)) }
+        _state.update { it.copy(route = route) }
+    }
 
     /**
      * Looks up the device location. Views the user hasn't changed (azimuthal
@@ -195,9 +258,9 @@ class MapViewModel @Inject constructor(
     fun exportTitle(): String {
         val s = state.value
         val base = s.kmlFileName?.substringBeforeLast('.') ?: s.source?.name ?: "map"
-        val view = s.view
-        val azimuth = if (view.effectiveAzimuth != 0.0) "_az%.0f".format(Locale.ROOT, view.effectiveAzimuth) else ""
-        return "$base-${s.projectionId}-%.0f_%.0f".format(Locale.ROOT, view.center.lon, view.center.lat) + azimuth
+        val (center, azimuth) = s.view.aspectFor(s.projectionType)
+        val turn = if (azimuth != 0.0) "_az%.0f".format(Locale.ROOT, azimuth) else ""
+        return "$base-${s.projectionId}-%.0f_%.0f".format(Locale.ROOT, center.lon, center.lat) + turn
     }
 
     private suspend fun render(input: RenderInput) {
@@ -218,14 +281,31 @@ class MapViewModel @Inject constructor(
         val raster = input.source?.let { raster(it.uri) }
         return withContext(cpu) {
             SceneBuilder.build(
-                projection = input.projection.create(input.center, input.azimuth),
+                projection = input.projection.create(input.center, input.azimuth, input.params),
                 size = size,
                 baseMap = raster,
-                kml = input.kml,
+                kml = withRoute(input.kml, input.route),
                 showGraticule = input.showGraticule,
                 attribution = input.source?.attribution,
             )
         }
+    }
+
+    /** Adds the route, if any, to the KML features so it's drawn and exported with them. */
+    private fun withRoute(kml: KmlDocument?, route: Route?): KmlDocument? {
+        if (route == null || (!route.greatCircle && !route.rhumb)) return kml
+        val ends = FeatureStyle(iconColor = ROUTE_ENDS, iconScale = 1.25f)
+        val features = buildList {
+            if (route.rhumb) {
+                add(Placemark("Rhumb line", null, Geometry.LineString(Geodesy.rhumbPath(route.from, route.to)), RHUMB_STYLE))
+            }
+            if (route.greatCircle) {
+                add(Placemark("Great circle", null, Geometry.LineString(listOf(route.from, route.to)), GREAT_CIRCLE_STYLE))
+            }
+            add(Placemark("A", null, Geometry.Point(route.from), ends))
+            add(Placemark("B", null, Geometry.Point(route.to), ends))
+        }
+        return KmlDocument(kml?.name, kml?.placemarks.orEmpty() + features)
     }
 
     private suspend fun raster(uri: String): RasterImage = rasterMutex.withLock {
@@ -256,5 +336,8 @@ class MapViewModel @Inject constructor(
     private companion object {
         const val PREVIEW_SIZE = 1024
         const val EXPORT_SIZE = 2048
+        const val ROUTE_ENDS = 0xFFFFFFFF.toInt()
+        val GREAT_CIRCLE_STYLE = FeatureStyle(lineColor = 0xFFFF4FD8.toInt(), lineWidth = 2.5f)
+        val RHUMB_STYLE = FeatureStyle(lineColor = 0xFF39D0FF.toInt(), lineWidth = 2.5f)
     }
 }

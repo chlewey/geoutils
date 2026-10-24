@@ -25,7 +25,10 @@ enum class AzimuthMode(val range: ClosedFloatingPointRange<Double>) {
  * For projections that rotate the sphere, latitude applies only while
  * [latitudeEnabled] and the azimuth only while [azimuthMode] isn't OFF;
  * otherwise both are 0, the normal aspect. Projections tied to geography
- * (Goode) use only the longitude and [southUp].
+ * (Goode) use only the longitude and [southUp]. Two-hemisphere maps use the
+ * longitude, latitude and azimuth as the point where the disks touch and the
+ * bearing of the split there, or, when [polar], the shared meridian and the
+ * turn of the map (latitude doesn't apply).
  */
 data class ViewSettings(
     val longitude: Double,
@@ -34,6 +37,7 @@ data class ViewSettings(
     val azimuthMode: AzimuthMode = AzimuthMode.OFF,
     val azimuth: Double = 0.0,
     val southUp: Boolean = false,
+    val polar: Boolean = false,
     val params: Map<String, String> = emptyMap(),
 ) {
     /** The center and azimuth to build [type] with. */
@@ -41,19 +45,29 @@ data class ViewSettings(
         AspectControls.ROTATE ->
             GeoPoint(longitude, if (latitudeEnabled) latitude else 0.0) to azimuthMode.normalize(azimuth)
         AspectControls.MERIDIAN_AND_FLIP -> GeoPoint(longitude, 0.0) to if (southUp) 180.0 else 0.0
+        AspectControls.TANGENT ->
+            GeoPoint(longitude, if (latitudeEnabled && !polar) latitude else 0.0) to azimuthMode.normalize(azimuth)
     }
+
+    /** Whether [type] takes the latitude as is, rather than off (0°) until switched on. */
+    fun latitudeAlwaysOn(type: ProjectionType) = startsOnDevice(type)
 
     companion object {
         /** Used for azimuthal maps until the device location is known. */
         val FALLBACK_CENTER = GeoPoint(-30.0, 20.0)
 
+        /** Azimuthal and hemispheric maps are centered on a point, by default the device location. */
+        fun startsOnDevice(type: ProjectionType) =
+            type.family == ProjectionFamily.AZIMUTHAL || type.family == ProjectionFamily.HEMISPHERIC
+
         /**
-         * Azimuthal maps start on the device location with latitude active;
-         * cylindrical and pseudocylindrical ones start in normal aspect on
-         * the projection's default longitude, with latitude and azimuth off.
+         * Azimuthal and hemispheric maps start on the device location with
+         * latitude active. Other maps start on the projection's default
+         * longitude with latitude and azimuth off: the normal aspect, or for
+         * two hemispheres, split along that meridian.
          */
         fun defaultFor(type: ProjectionType, deviceLocation: GeoPoint?): ViewSettings =
-            if (type.family == ProjectionFamily.AZIMUTHAL) {
+            if (startsOnDevice(type)) {
                 val center = deviceLocation ?: FALLBACK_CENTER
                 ViewSettings(center.lon, center.lat, latitudeEnabled = true)
             } else {

@@ -1,6 +1,9 @@
 package net.interlecto.geoutils.geometry
 
-enum class ProjectionFamily { AZIMUTHAL, CYLINDRICAL, PSEUDOCYLINDRICAL }
+import kotlin.math.PI
+import kotlin.math.sqrt
+
+enum class ProjectionFamily { HEMISPHERIC, AZIMUTHAL, CYLINDRICAL, PSEUDOCYLINDRICAL, DOUBLE_HEMISPHERIC }
 
 /** Which aspect controls a projection accepts. */
 enum class AspectControls {
@@ -13,6 +16,13 @@ enum class AspectControls {
      * tilting the sphere under them gives incoherent results.
      */
     MERIDIAN_AND_FLIP,
+
+    /**
+     * Two hemispheres side by side: the point where they touch (longitude,
+     * latitude), the azimuth of the split there, and a polar layout
+     * (northern and southern hemispheres). See [doubleHemisphere].
+     */
+    TANGENT,
 }
 
 /** A setting specific to one projection. Values are passed around as strings. */
@@ -69,14 +79,20 @@ class ProjectionType private constructor(
     val defaultLongitude: Double,
     val aspect: AspectControls,
     val params: List<ProjectionParam>,
-    private val build: (center: GeoPoint, azimuthDeg: Double, values: ParamValues) -> Projection,
+    private val build: (center: GeoPoint, azimuthDeg: Double, polar: Boolean, values: ParamValues) -> Projection,
 ) {
     /**
      * Builds the projection. For [AspectControls.MERIDIAN_AND_FLIP] only the
-     * center's longitude is used, and an azimuth of 180° means south up.
+     * center's longitude is used, and an azimuth of 180° means south up. For
+     * [AspectControls.TANGENT] the center is where the hemispheres touch;
+     * [polar] applies only there.
      */
-    fun create(center: GeoPoint, azimuthDeg: Double = 0.0, values: Map<String, String> = emptyMap()): Projection =
-        build(center, azimuthDeg, ParamValues(params, values))
+    fun create(
+        center: GeoPoint,
+        azimuthDeg: Double = 0.0,
+        values: Map<String, String> = emptyMap(),
+        polar: Boolean = false,
+    ): Projection = build(center, azimuthDeg, polar, ParamValues(params, values))
 
     companion object {
         /** A projection aimed by rotating the sphere under its normal-aspect formulas. */
@@ -87,7 +103,7 @@ class ProjectionType private constructor(
             defaultLongitude: Double,
             params: List<ProjectionParam> = emptyList(),
             normal: (ParamValues) -> NormalProjection,
-        ) = ProjectionType(id, displayName, family, defaultLongitude, AspectControls.ROTATE, params) { center, azimuth, values ->
+        ) = ProjectionType(id, displayName, family, defaultLongitude, AspectControls.ROTATE, params) { center, azimuth, _, values ->
             RotatedProjection(normal(values), center, azimuth)
         }
 
@@ -104,11 +120,17 @@ class ProjectionType private constructor(
             defaultLongitude: Double,
             params: List<ProjectionParam> = emptyList(),
             build: (values: ParamValues) -> Projection,
-        ) = ProjectionType(id, displayName, family, defaultLongitude, AspectControls.MERIDIAN_AND_FLIP, params) { center, azimuth, values ->
+        ) = ProjectionType(id, displayName, family, defaultLongitude, AspectControls.MERIDIAN_AND_FLIP, params) { center, azimuth, _, values ->
             val built = build(values)
             val map = if (center.lon == 0.0) built else ShiftedProjection(built, center.lon)
             if (azimuth.mod(360.0) == 180.0) FlippedProjection(map) else map
         }
+
+        /** Two copies of a hemispheric map, touching at one point; see [doubleHemisphere]. */
+        fun doubleHemispheric(id: String, displayName: String, defaultLongitude: Double, hemisphere: NormalProjection) =
+            ProjectionType(
+                id, displayName, ProjectionFamily.DOUBLE_HEMISPHERIC, defaultLongitude, AspectControls.TANGENT, emptyList(),
+            ) { tangent, azimuth, polar, _ -> doubleHemisphere(hemisphere, tangent, azimuth, polar) }
     }
 }
 
@@ -117,9 +139,29 @@ object ProjectionCatalog {
     /** Keeps the antimeridian cut in the Bering Strait, away from land. */
     private const val WORLD_CENTER = 10.0
 
-    val ORTHOGRAPHIC = ProjectionType.rotating("orthographic", "Orthographic", ProjectionFamily.AZIMUTHAL, 0.0) {
+    /** Splits at 30° W / 150° E: the Americas on one disk, Europe, Africa and Asia on the other. */
+    private const val SPLIT_MERIDIAN = -30.0
+
+    private val AZIMUTHAL_EQUIDISTANT_HEMISPHERE = HemisphereNormal(AzimuthalEquidistantNormal, PI / 2)
+    private val LAMBERT_AZIMUTHAL_HEMISPHERE = HemisphereNormal(LambertAzimuthalEqualAreaNormal, sqrt(2.0))
+    private val MOLLWEIDE_HEMISPHERE = HemisphereNormal(MollweideNormal, sqrt(2.0))
+
+    val ORTHOGRAPHIC = ProjectionType.rotating("orthographic", "Orthographic", ProjectionFamily.HEMISPHERIC, 0.0) {
         OrthographicNormal
     }
+    val AZIMUTHAL_EQUIDISTANT_HEMI = ProjectionType.rotating(
+        "azimuthal-equidistant-hemisphere", "Azimuthal equidistant (hemisphere)", ProjectionFamily.HEMISPHERIC, 0.0,
+    ) { AZIMUTHAL_EQUIDISTANT_HEMISPHERE }
+    val LAMBERT_AZIMUTHAL_HEMI = ProjectionType.rotating(
+        "lambert-azimuthal-hemisphere", "Lambert azimuthal equal-area (hemisphere)", ProjectionFamily.HEMISPHERIC, 0.0,
+    ) { LAMBERT_AZIMUTHAL_HEMISPHERE }
+    val MOLLWEIDE_HEMI = ProjectionType.rotating(
+        "mollweide-hemisphere", "Mollweide (hemisphere)", ProjectionFamily.HEMISPHERIC, 0.0,
+    ) { MOLLWEIDE_HEMISPHERE }
+    val NICOLOSI = ProjectionType.rotating("nicolosi", "Nicolosi globular", ProjectionFamily.HEMISPHERIC, 0.0) {
+        NicolosiNormal
+    }
+
     val AZIMUTHAL_EQUIDISTANT = ProjectionType.rotating(
         "azimuthal-equidistant", "Azimuthal equidistant", ProjectionFamily.AZIMUTHAL, 0.0,
     ) { AzimuthalEquidistantNormal }
@@ -193,10 +235,30 @@ object ProjectionCatalog {
         }
     }
 
+    val DOUBLE_ORTHOGRAPHIC = ProjectionType.doubleHemispheric(
+        "double-orthographic", "Orthographic (two hemispheres)", SPLIT_MERIDIAN, OrthographicNormal,
+    )
+    val DOUBLE_AZIMUTHAL_EQUIDISTANT = ProjectionType.doubleHemispheric(
+        "double-azimuthal-equidistant", "Azimuthal equidistant (two hemispheres)", SPLIT_MERIDIAN,
+        AZIMUTHAL_EQUIDISTANT_HEMISPHERE,
+    )
+    val DOUBLE_LAMBERT_AZIMUTHAL = ProjectionType.doubleHemispheric(
+        "double-lambert-azimuthal", "Lambert azimuthal equal-area (two hemispheres)", SPLIT_MERIDIAN,
+        LAMBERT_AZIMUTHAL_HEMISPHERE,
+    )
+    val DOUBLE_MOLLWEIDE = ProjectionType.doubleHemispheric(
+        "double-mollweide", "Mollweide (two hemispheres)", SPLIT_MERIDIAN, MOLLWEIDE_HEMISPHERE,
+    )
+    val DOUBLE_NICOLOSI = ProjectionType.doubleHemispheric(
+        "double-nicolosi", "Nicolosi globular (two hemispheres)", SPLIT_MERIDIAN, NicolosiNormal,
+    )
+
     val all = listOf(
-        ORTHOGRAPHIC, AZIMUTHAL_EQUIDISTANT, LAMBERT_AZIMUTHAL,
+        ORTHOGRAPHIC, AZIMUTHAL_EQUIDISTANT_HEMI, LAMBERT_AZIMUTHAL_HEMI, MOLLWEIDE_HEMI, NICOLOSI,
+        AZIMUTHAL_EQUIDISTANT, LAMBERT_AZIMUTHAL,
         EQUIRECTANGULAR, MERCATOR, LAMBERT_CYLINDRICAL, BEHRMANN, HOBO_DYER, GALL_PETERS, CENTRAL_CYLINDRICAL,
         SINUSOIDAL, MOLLWEIDE, EQUAL_EARTH, GOODE,
+        DOUBLE_ORTHOGRAPHIC, DOUBLE_AZIMUTHAL_EQUIDISTANT, DOUBLE_LAMBERT_AZIMUTHAL, DOUBLE_MOLLWEIDE, DOUBLE_NICOLOSI,
     )
 
     fun byId(id: String): ProjectionType = all.firstOrNull { it.id == id } ?: ORTHOGRAPHIC

@@ -20,14 +20,26 @@
         <item quantity="other">%1$s · %2$d placemarks</item>
     </plurals>
     <string name="projection">Projection</string>
+    <string name="family_hemispheric">Hemispheric</string>
     <string name="family_azimuthal">Azimuthal</string>
     <string name="family_cylindrical">Cylindrical</string>
     <string name="family_pseudocylindrical">Pseudocylindrical</string>
+    <string name="family_double_hemispheric">Two hemispheres</string>
     <string name="longitude_10e">10° E</string>
     <string name="longitude_0">0°</string>
     <string name="longitude_here">Here</string>
     <string name="center_longitude">Center longitude: %1$.1f°</string>
     <string name="center_latitude">Center latitude: %1$.1f°</string>
+    <string name="pole_north">N pole</string>
+    <string name="pole_equator">Equator</string>
+    <string name="pole_south">S pole</string>
+    <string name="layout">Layout</string>
+    <string name="layout_split">Split</string>
+    <string name="layout_polar">Polar</string>
+    <string name="tangent_longitude">Tangent longitude: %1$.1f°</string>
+    <string name="shared_meridian">Shared meridian: %1$.1f°</string>
+    <string name="split_note">Longitude and latitude are where the disks touch; the azimuth is the bearing of the split there (0° runs north–south). With latitude 0° the longitude is the split meridian.</string>
+    <string name="polar_note">Northern and southern hemispheres, touching on the equator at the shared meridian. The azimuth turns the line through both poles (0° is horizontal).</string>
     <string name="azimuth">Azimuth (up): %1$.1f°</string>
     <string name="azimuth_off">Off</string>
     <string name="azimuth_signed">±180°</string>

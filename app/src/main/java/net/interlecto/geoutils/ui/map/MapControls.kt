@@ -135,18 +135,24 @@ private fun MapTab(state: MapUiState, viewModel: MapViewModel, onOpenImage: () -
 
 /**
  * Center and orientation. Projections that rotate the sphere get center,
- * latitude and azimuth; interrupted ones (Goode) only the central meridian and
- * north-up / south-up.
+ * latitude and azimuth, with pole shortcuts for azimuthal and hemispheric
+ * maps; interrupted ones (Goode) only the central meridian and north-up /
+ * south-up; two-hemisphere maps the tangent point and a polar layout.
  */
 @Composable
 private fun ViewTab(state: MapUiState, viewModel: MapViewModel) {
     val type = state.projectionType
     val view = state.view
-    val wholeSphere = type.family != ProjectionFamily.AZIMUTHAL
+    val wholeSphere = !view.latitudeAlwaysOn(type)
     when (type.aspect) {
         AspectControls.ROTATE -> {
             LongitudeControl(view.longitude, wholeSphere, state.deviceLocation, R.string.center_longitude, viewModel::setLongitude)
             LatitudeControl(view, switchable = wholeSphere, viewModel::setLatitude, viewModel::setLatitudeEnabled)
+            when (type.family) {
+                ProjectionFamily.AZIMUTHAL -> PoleShortcuts(view.latitude, listOf(90.0, -90.0), viewModel::setLatitude)
+                ProjectionFamily.HEMISPHERIC -> PoleShortcuts(view.latitude, listOf(90.0, 0.0, -90.0), viewModel::setLatitude)
+                else -> Unit
+            }
             AzimuthControl(view.azimuthMode, view.azimuth, viewModel::setAzimuthMode, viewModel::setAzimuth)
 
             Spacer(Modifier.padding(top = 8.dp))
@@ -170,6 +176,40 @@ private fun ViewTab(state: MapUiState, viewModel: MapViewModel) {
                 onSelect = viewModel::setSouthUp,
             )
             Hint(stringResource(R.string.interrupted_note))
+        }
+
+        AspectControls.TANGENT -> {
+            Text(stringResource(R.string.layout), style = MaterialTheme.typography.bodyMedium)
+            SegmentedChoice(
+                options = listOf(false to stringResource(R.string.layout_split), true to stringResource(R.string.layout_polar)),
+                selected = view.polar,
+                onSelect = viewModel::setPolar,
+            )
+            LongitudeControl(
+                view.longitude,
+                quickPicks = false,
+                state.deviceLocation,
+                if (view.polar) R.string.shared_meridian else R.string.tangent_longitude,
+                viewModel::setLongitude,
+            )
+            if (!view.polar) LatitudeControl(view, switchable = true, viewModel::setLatitude, viewModel::setLatitudeEnabled)
+            AzimuthControl(view.azimuthMode, view.azimuth, viewModel::setAzimuthMode, viewModel::setAzimuth)
+            Hint(stringResource(if (view.polar) R.string.polar_note else R.string.split_note))
+        }
+    }
+}
+
+/** One-tap latitudes: the poles, and for hemispheric maps the equator. */
+@Composable
+private fun PoleShortcuts(latitude: Double, latitudes: List<Double>, onSelect: (Double) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (lat in latitudes) {
+            val label = when {
+                lat > 0 -> R.string.pole_north
+                lat < 0 -> R.string.pole_south
+                else -> R.string.pole_equator
+            }
+            FilterChip(selected = latitude == lat, onClick = { onSelect(lat) }, label = { Text(stringResource(label)) })
         }
     }
 }
@@ -271,9 +311,11 @@ private fun ProjectionPicker(current: ProjectionType, onSelect: (String) -> Unit
 }
 
 private fun familyLabel(family: ProjectionFamily) = when (family) {
+    ProjectionFamily.HEMISPHERIC -> R.string.family_hemispheric
     ProjectionFamily.AZIMUTHAL -> R.string.family_azimuthal
     ProjectionFamily.CYLINDRICAL -> R.string.family_cylindrical
     ProjectionFamily.PSEUDOCYLINDRICAL -> R.string.family_pseudocylindrical
+    ProjectionFamily.DOUBLE_HEMISPHERIC -> R.string.family_double_hemispheric
 }
 
 /** Controls generated from the projection's own parameters. */

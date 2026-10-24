@@ -29,11 +29,17 @@ See [ROADMAP.md](ROADMAP.md) for the planned milestones.
 
 Output projections (input bitmaps are equirectangular):
 
-- **Azimuthal:** orthographic (globe view), azimuthal equidistant, Lambert
-  azimuthal equal-area
+- **Hemispheric:** orthographic (globe view), azimuthal equidistant, Lambert
+  azimuthal equal-area and Mollweide limited to one hemisphere, Nicolosi
+  globular
+- **Azimuthal:** azimuthal equidistant, Lambert azimuthal equal-area, with
+  one-tap polar aspects
 - **Cylindrical:** equirectangular (plate carrée), Mercator, cylindrical
   equal-area (Lambert, Behrmann, Hobo–Dyer, Gall–Peters), central cylindrical
 - **Pseudocylindrical:** sinusoidal, Mollweide, Equal Earth, Goode homolosine
+- **Two hemispheres:** any hemispheric map on two touching disks, split along
+  a meridian (by default 30° W / 150° E) or any great circle, or as northern
+  and southern hemispheres
 
 Continuous projections can be aimed at any center and turned by an azimuth:
 the sphere is rotated so the chosen point is at the middle of the map, then

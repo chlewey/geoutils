@@ -38,6 +38,7 @@ import net.interlecto.geoutils.domain.model.KmlDocument
 import net.interlecto.geoutils.domain.model.Placemark
 import net.interlecto.geoutils.domain.model.MapScene
 import net.interlecto.geoutils.domain.render.SceneBuilder
+import net.interlecto.geoutils.geometry.AspectControls
 import net.interlecto.geoutils.geometry.GeoPoint
 import net.interlecto.geoutils.geometry.Geodesy
 import net.interlecto.geoutils.geometry.ProjectionCatalog
@@ -76,7 +77,7 @@ data class MapUiState(
     val renderInput: RenderInput
         get() {
             val (center, azimuth) = view.aspectFor(projectionType)
-            return RenderInput(source, kml, projectionType, center, azimuth, view.params, route, showGraticule)
+            return RenderInput(source, kml, projectionType, center, azimuth, view.polar, view.params, route, showGraticule)
         }
 }
 
@@ -86,6 +87,7 @@ data class RenderInput(
     val projection: ProjectionType,
     val center: GeoPoint,
     val azimuth: Double,
+    val polar: Boolean,
     val params: Map<String, String>,
     val route: Route?,
     val showGraticule: Boolean,
@@ -195,6 +197,8 @@ class MapViewModel @Inject constructor(
 
     fun setSouthUp(southUp: Boolean) = updateView { it.copy(southUp = southUp) }
 
+    fun setPolar(polar: Boolean) = updateView { it.copy(polar = polar) }
+
     fun setParam(key: String, value: String) = updateView { it.copy(params = it.params + (key to value)) }
 
     /**
@@ -260,7 +264,8 @@ class MapViewModel @Inject constructor(
         val base = s.kmlFileName?.substringBeforeLast('.') ?: s.source?.name ?: "map"
         val (center, azimuth) = s.view.aspectFor(s.projectionType)
         val turn = if (azimuth != 0.0) "_az%.0f".format(Locale.ROOT, azimuth) else ""
-        return "$base-${s.projectionId}-%.0f_%.0f".format(Locale.ROOT, center.lon, center.lat) + turn
+        val polar = if (s.view.polar && s.projectionType.aspect == AspectControls.TANGENT) "_polar" else ""
+        return "$base-${s.projectionId}-%.0f_%.0f".format(Locale.ROOT, center.lon, center.lat) + turn + polar
     }
 
     private suspend fun render(input: RenderInput) {
@@ -281,7 +286,7 @@ class MapViewModel @Inject constructor(
         val raster = input.source?.let { raster(it.uri) }
         return withContext(cpu) {
             SceneBuilder.build(
-                projection = input.projection.create(input.center, input.azimuth, input.params),
+                projection = input.projection.create(input.center, input.azimuth, input.params, input.polar),
                 size = size,
                 baseMap = raster,
                 kml = withRoute(input.kml, input.route),

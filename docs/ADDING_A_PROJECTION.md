@@ -35,14 +35,14 @@ object MyProjectionNormal : NormalProjection {
 - **`forward` and `inverse`** run millions of times per image, so don't
   allocate in them.
 
-Put the class in the file for its family: `Azimuthal.kt`, `Cylindrical.kt`
-or `Pseudocylindrical.kt`.
+Put the class in the file for its family: `Azimuthal.kt`, `Cylindrical.kt`,
+`Pseudocylindrical.kt` or `Hemispheric.kt`.
 
 ### Choosing the clip
 
 | Kind of map | `clip` |
 |---|---|
-| Shows one hemisphere (orthographic) | `Clip.Cap(0.0)` |
+| Shows one hemisphere (orthographic, Nicolosi) | `Clip.Cap(0.0)` |
 | Shows almost the whole sphere around a center (azimuthal equidistant, Lambert) | `Clip.Cap(cos(179°))` |
 | Whole sphere cut at the antimeridian (cylindrical, pseudocylindrical) | `Clip.Seams()` |
 | Interrupted (Goode) | `Clip.Seams(listOf(Seam.ANTIMERIDIAN, …interruptions))` |
@@ -72,6 +72,11 @@ val MY_PROJECTION = ProjectionType.rotating(
   discontinuous maps that are laid out for the continents. Rotating the
   sphere under them gives incoherent maps, so they only get a central
   meridian and a north-up/south-up toggle, plus their own parameters.
+- **`ProjectionType.doubleHemispheric`** shows a hemispheric map twice, on
+  two disks that touch (`doubleHemisphere`). Its controls are the tangent
+  point, the azimuth of the split and a polar layout. Any `NormalProjection`
+  that draws its hemisphere as a disk filling its bounds works; wrap a
+  whole-sphere one in `HemisphereNormal` to keep only that disk.
 
 ### Parameters
 

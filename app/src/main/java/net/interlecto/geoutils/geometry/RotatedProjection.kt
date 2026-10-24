@@ -6,35 +6,39 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * An orthonormal frame at [center], turned by [azimuthDeg]: c points at the
- * center, u along the bearing [azimuthDeg] (clockwise from north) and r to
- * the right of u. In local coordinates q = (p·c, p·r, p·u), the center is at
- * (0°, 0°) and the azimuth bearing points north.
+ * An orthonormal frame on the sphere: [c] points at the center of the map,
+ * [u] is "up" (north on the map) and [r] = [u] × [c] points to the right. In
+ * local coordinates q = (p·c, p·r, p·u), the center is at (0°, 0°) and [u]
+ * points north.
  */
-class SphereFrame(center: GeoPoint, azimuthDeg: Double) {
-    val c: Vec3 = center.toVec3()
-    val r: Vec3
-    val u: Vec3
-
-    init {
-        val lambda0 = Math.toRadians(center.lon)
-        val phi0 = Math.toRadians(center.lat)
-        val east = Vec3(-sin(lambda0), cos(lambda0), 0.0)
-        val north = Vec3(-sin(phi0) * cos(lambda0), -sin(phi0) * sin(lambda0), cos(phi0))
-        val a = Math.toRadians(azimuthDeg)
-        u = north * cos(a) + east * sin(a)
-        r = east * cos(a) - north * sin(a)
-    }
+class SphereFrame(val c: Vec3, val r: Vec3, val u: Vec3) {
 
     fun toLocal(p: Vec3) = Vec3(p dot c, p dot r, p dot u)
 
     fun toGlobal(q: Vec3) = c * q.x + r * q.y + u * q.z
+
+    companion object {
+        /** The frame at [center] with "up" along the bearing [azimuthDeg] (clockwise from north). */
+        operator fun invoke(center: GeoPoint, azimuthDeg: Double): SphereFrame {
+            val lambda0 = Math.toRadians(center.lon)
+            val phi0 = Math.toRadians(center.lat)
+            val east = Vec3(-sin(lambda0), cos(lambda0), 0.0)
+            val north = Vec3(-sin(phi0) * cos(lambda0), -sin(phi0) * sin(lambda0), cos(phi0))
+            val a = Math.toRadians(azimuthDeg)
+            return SphereFrame(
+                c = center.toVec3(),
+                r = east * cos(a) - north * sin(a),
+                u = north * cos(a) + east * sin(a),
+            )
+        }
+    }
 }
 
 /**
- * A [NormalProjection] aimed at [center] and turned by [azimuthDeg]: the
- * sphere is rotated so that [center] lands on (0°, 0°) with the azimuth
- * bearing pointing north, then projected with the normal formulas. Clipping
+ * A [NormalProjection] aimed by a [SphereFrame], usually built from a center
+ * and an azimuth: the sphere is rotated so that the center lands on (0°, 0°)
+ * with the azimuth bearing pointing north, then projected with the normal
+ * formulas. Clipping
  * and cutting happen in the rotated system.
  *
  * With a [region], only that box (in rotated coordinates) is drawn, instead
@@ -43,12 +47,12 @@ class SphereFrame(center: GeoPoint, azimuthDeg: Double) {
  */
 class RotatedProjection(
     val base: NormalProjection,
-    val center: GeoPoint,
-    val azimuthDeg: Double = 0.0,
+    private val frame: SphereFrame,
     region: LonLatBox? = null,
 ) : Projection {
 
-    private val frame = SphereFrame(center, azimuthDeg)
+    constructor(base: NormalProjection, center: GeoPoint, azimuthDeg: Double = 0.0, region: LonLatBox? = null) :
+        this(base, SphereFrame(center, azimuthDeg), region)
     private val clipper: Clipper = when {
         region != null -> BoxClipper(base, region)
         else -> when (val clip = base.clip) {

@@ -13,6 +13,13 @@ Conventions used throughout:
   the same order KML uses.
 - **Equirectangular input.** A base map bitmap covers 360° × 180°: x = 0 is
   180° W, y = 0 is 90° N, and the aspect ratio is 2:1.
+- **Earlier projects.** Items marked *(from …)* port ideas, code or data from
+  the author's earlier map tools:
+  [globe-prj](https://github.com/chlewey/globe-prj) (Python),
+  [kml2svg](https://github.com/chlewey/kml2svg) (PHP) and
+  [maps](https://github.com/chlewey/maps) (PHP). They are reimplemented here
+  in Kotlin, not copied. Third-party data in them (GADM boundaries, KMLs of
+  unknown origin) is not bundled.
 
 ---
 
@@ -209,33 +216,33 @@ Goal: adding a projection is cheap, and any projection can be re-aimed.
     *Both* draws the divided map plus Greenland's eastern part a second time
     in the extended position.
 
-Status: implemented, apart from the projection families below, which are
-the next step.
+Status: implemented, apart from the conic projections below, which are the
+next step. Hemispheric and two-hemisphere maps are done.
 
-### More projection families (not started)
+### More projection families
 
 - [ ] **Conic:** Albers equal-area, Lambert conformal conic, equidistant
       conic, each with one or two standard parallels as parameters.
       Rotation works for conics as for cylindricals, but the cut runs from
       the apex and the map is a sector of an annulus.
-- [ ] **Polar shortcut for azimuthals:** one-click N / S buttons next to the
+- [x] **Polar shortcut for azimuthals:** one-click N / S buttons next to the
       center controls of the azimuthal projections (equidistant, Lambert
       equal-area). They set the center latitude to ±90° and keep the
       longitude, which then sets which meridian points down (or up).
-- [ ] **Hemispheric:** one hemisphere on its own, clipped to a disk at 90°
+- [x] **Hemispheric:** one hemisphere on its own, clipped to a disk at 90°
       from the center. Parametrized like the azimuthals (center longitude,
       latitude, azimuth), plus a quick **N / Equator / S** setting for the
       latitude (90°, 0°, −90°). Projections:
-  - [ ] Orthographic (the current one, which is already hemispheric).
-  - [ ] Azimuthal equidistant, hemisphere only (disk radius π/2).
-  - [ ] Lambert azimuthal equal-area, hemisphere only (disk radius √2).
-  - [ ] Mollweide, hemisphere only: the circle between ±90° from the central
+  - [x] Orthographic (the current one, which is already hemispheric).
+  - [x] Azimuthal equidistant, hemisphere only (disk radius π/2).
+  - [x] Lambert azimuthal equal-area, hemisphere only (disk radius √2).
+  - [x] Mollweide, hemisphere only: the circle between ±90° from the central
         meridian, in the rotated frame.
-  - [ ] Nicolosi globular (new; hemispheric by nature).
+  - [x] Nicolosi globular (new; hemispheric by nature).
 
   For the non-azimuthal ones (Mollweide, Nicolosi) the disk's horizontal
   line is the "equator" of the rotated frame.
-- [ ] **Double hemispheric:** any of the hemispheric projections above, as two
+- [x] **Double hemispheric:** any of the hemispheric projections above, as two
       disks tangent to each other in one image. This needs a projection made
       of several sub-maps, the same structure interrupted projections use
       (`Composite`). Two modes:
@@ -259,6 +266,25 @@ the next step.
     rotation of the finished image. Hence the azimuth of the two modes
     differs by 90°: polar names the line of centers, non-polar names the
     tangent.
+
+### Overlay tools from earlier projects
+
+- [ ] `Geodesy.destination(point, distance, bearing)`: the point reached
+      along a great circle *(from kml2svg `move_coor`)*. The tools below
+      build on it.
+- [ ] **Range rings and azimuth rays** from a point: circles every N km (by
+      default 1000 km) and bearings every 15° (Tools tab). On the azimuthal
+      equidistant map they come out as concentric circles and straight
+      lines *(from kml2svg `equi.php`)*.
+- [ ] **Geodesic circle:** everything within a radius of a point, drawn as a
+      closed polygon *(from kml2svg `circle()`)*.
+- [ ] **Special parallels** in the graticule: tropics of Cancer and
+      Capricorn and the polar circles, dashed, as an option
+      *(from kml2svg `projection.php`)*.
+- [ ] Candidate for the hemispheric family: the **circular equal-area
+      globular** (`cirq_ea`), a hemisphere on a disk of radius √2 with
+      circular-arc meridians *(from kml2svg `circ.php`)*. Check first that
+      it really preserves area: its parallels are spaced linearly in φ.
 
 ## Milestone 4: Base map library (v0.4)
 
@@ -288,6 +314,27 @@ Goal: keep and manage more than one base map.
     it for its dimensions and the embedded raster's resolution.
 - [ ] The SVG clips to the chosen region (`viewBox`), and its embedded raster
       covers only that region.
+- [ ] Simplify vector paths at the output resolution (Douglas–Peucker), so
+      large KMLs give small SVGs *(idea from maps `reduce.php`, which only
+      dropped collinear points)*.
+
+### Overlays and KML
+
+- [ ] **Bundled continents overlay:** `Continents.kml` *(from kml2svg)*, the
+      author's own work (CC0), used here under the project's license. The
+      continents with their subregions (Africa N/E/W/C, Asia N/E/S/SE/W/C, …)
+      and the oceans (Atlantic, Indian), with styles per area. It is 2.5 MB
+      of KML, so simplify it and store it compressed (KMZ) in `assets/`, and
+      offer it in the KML picker next to "Open KML…", the way Blue Marble is
+      offered as a base map.
+- [ ] **KMZ input** (moved up from Later / ideas): a zip with `doc.kml` and
+      its resources.
+- [ ] Per layer, how segments between KML vertices are drawn: along great
+      circles (as now, like Google Earth) or along parallels / rhumb lines,
+      so borders traced on a parallel (49° N) stay on it
+      *(from kml2svg `mkline2`)*.
+- [ ] **Export overlays as KML:** routes, range rings and circles, besides
+      SVG and PNG *(from globe-prj `as_kml`, kml2svg `equi.php`)*.
 
 ### Places (center presets)
 
@@ -338,8 +385,39 @@ panning a fixed image.
       reuse it).
 - [ ] Tap a feature to see its KML name and description; tap two points to draw a
       great-circle or rhumb path between them.
+- [ ] Spherical polygon tools, needed for tapping and for labels: point in
+      polygon by winding number on the sphere, a polygon's center from its
+      normal vector, and holes found by containment for KMLs that store
+      rings as separate polygons *(from globe-prj `GeoTag.py`, kml2svg
+      `fixmap.php`)*.
 - [ ] Export the current view at a chosen resolution or as SVG (builds on
       the export options from milestone 4).
+
+## Milestone 7: Thematic maps (v1.1)
+
+Goal: color a KML's areas by data *(from maps)*.
+
+- [ ] Load a CSV and join its rows to KML placemarks by name, with an alias
+      table to match differing names (accents, abbreviations, codes)
+      *(from maps `name2code`, kml2svg `[alias]` sections)*.
+- [ ] Choropleth: pick a column, classes (equal intervals, quantiles), a
+      color ramp and a legend; areas without data shown apart.
+- [ ] Labels at each area's center (spherical polygon tools, milestone 6).
+- [ ] Values in the exported SVG (each area's `<title>` with name and
+      value).
+
+## Milestone 8: KML topology editing (v1.2)
+
+Goal: reshape KML areas with editing lines, for historical and fictional
+maps *(from kml2svg `fixmap.php`; low priority)*.
+
+- [ ] Edit commands drawn as lines in a special folder: split an area along
+      a line, delete, drill (holes), reshape from another area, copy,
+      rename/move between folders.
+- [ ] Shared borders: an edit applies to every area that uses that border.
+- [ ] Aliases and per-area styles from a configuration, statistics (areas,
+      point counts), and a folder for edits that failed.
+- [ ] Output as KML.
 
 ## Later / ideas
 
@@ -347,7 +425,8 @@ panning a fixed image.
   in addition to SVG with an embedded bitmap.
 - Ellipsoidal Earth (WGS84) for projections where it matters (Mercator, transverse
   Mercator).
-- More input formats: GeoJSON, GPX, KMZ, shapefile, and SVG icons for placemarks.
+- More input formats: GeoJSON, GPX, shapefile, and SVG icons for placemarks
+  (KMZ moved to milestone 4).
 - Input bitmaps in projections other than equirectangular (inverse-project
   them to equirectangular first).
 - Tissot indicatrix and distortion heatmaps.

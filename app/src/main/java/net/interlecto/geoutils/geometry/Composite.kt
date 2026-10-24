@@ -1,6 +1,8 @@
 package net.interlecto.geoutils.geometry
 
 import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * The map turned 180° in the plane: south up. Unlike an azimuth of 180°, this
@@ -31,18 +33,20 @@ class FlippedProjection(private val inner: Projection) : Projection {
 }
 
 /**
- * A map drawn in several parts, all within the first part's bounds. Some of
- * the sphere may appear in more than one part (Goode with Greenland both
- * whole and divided). [forward] and [inverse] use the first part that
- * accepts the point; paths are drawn in every part.
+ * A map drawn in several parts, within [bounds] (by default, the first
+ * part's). Some of the sphere may appear in more than one part (Goode with
+ * Greenland both whole and divided, or the rim shared by two hemispheres).
+ * [forward] and [inverse] use the first part that accepts the point; paths
+ * are drawn in every part.
  */
-class CompositeProjection(private val parts: List<Projection>) : Projection {
+class CompositeProjection(
+    private val parts: List<Projection>,
+    override val bounds: Bounds = parts.first().bounds,
+) : Projection {
 
     init {
         require(parts.isNotEmpty())
     }
-
-    override val bounds: Bounds get() = parts.first().bounds
 
     override fun forward(lon: Double, lat: Double, out: DoubleArray): Boolean =
         parts.any { it.forward(lon, lat, out) }
@@ -146,5 +150,47 @@ class ShiftedProjection(private val inner: Projection, shiftDeg: Double) : Proje
             }
         }
         return out
+    }
+}
+
+/**
+ * A map moved in the plane: shifted by [offset], then turned clockwise by
+ * [rotationDeg] about the origin. Used to lay out the parts of a
+ * [CompositeProjection].
+ */
+class PlacedProjection(private val inner: Projection, private val offset: Vec2, rotationDeg: Double = 0.0) : Projection {
+
+    private val cosA = cos(Math.toRadians(rotationDeg))
+    private val sinA = sin(Math.toRadians(rotationDeg))
+
+    override val bounds: Bounds
+        get() = inner.bounds.let { b ->
+            val corners = listOf(Vec2(b.minX, b.minY), Vec2(b.maxX, b.minY), Vec2(b.minX, b.maxY), Vec2(b.maxX, b.maxY))
+                .map(::place)
+            Bounds(corners.minOf { it.x }, corners.minOf { it.y }, corners.maxOf { it.x }, corners.maxOf { it.y })
+        }
+
+    override fun forward(lon: Double, lat: Double, out: DoubleArray): Boolean {
+        if (!inner.forward(lon, lat, out)) return false
+        val x = out[0] + offset.x
+        val y = out[1] + offset.y
+        out[0] = x * cosA + y * sinA
+        out[1] = -x * sinA + y * cosA
+        return true
+    }
+
+    override fun inverse(x: Double, y: Double, out: DoubleArray): Boolean =
+        inner.inverse(x * cosA - y * sinA - offset.x, x * sinA + y * cosA - offset.y, out)
+
+    override fun outline(): List<List<Vec2>> = inner.outline().map { it.map(::place) }
+
+    override fun projectLine(points: List<GeoPoint>): List<List<Vec2>> = inner.projectLine(points).map { it.map(::place) }
+
+    override fun projectRing(ring: List<GeoPoint>): List<List<Vec2>> = inner.projectRing(ring).map { it.map(::place) }
+
+    private fun place(p: Vec2): Vec2 {
+        val x = p.x + offset.x
+        val y = p.y + offset.y
+        return Vec2(x * cosA + y * sinA, -x * sinA + y * cosA)
     }
 }

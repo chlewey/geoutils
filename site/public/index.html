@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Geo-Utils</title>
+  <meta name="description" content="Geo-Utils is an Android app for making maps in many projections: reproject equirectangular base maps, draw KML on top, aim the map anywhere and export SVG or PNG.">
+  <meta property="og:title" content="Geo-Utils — maps in any projection">
+  <meta property="og:description" content="Reproject base maps and KML into 14 projections, aim them anywhere, and export SVG or PNG. An Android app, in development.">
+  <meta property="og:image" content="https://geoutils.ilecto.app/img/og.jpg">
+  <meta property="og:url" content="https://geoutils.ilecto.app/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#000814">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #000814;
+      --bg-2: #061426;
+      --panel: #0a1d33;
+      --line: #17324f;
+      --text: #eaf2f8;
+      --muted: #9fb3c8;
+      --ocean: #0b3d66;
+      --land: #5fa36a;
+      --accent: #7cc4ff;
+      --radius: 16px;
+      --max: 1120px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    img { max-width: 100%; display: block; }
+    .wrap { max-width: var(--max); margin: 0 auto; padding: 0 16px; }
+
+    /* Header */
+    header {
+      position: sticky; top: 0; z-index: 10;
+      background: color-mix(in srgb, var(--bg) 85%, transparent);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav { display: flex; align-items: center; gap: 24px; height: 64px; }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 700; font-size: 18px; }
+    .brand:hover { text-decoration: none; }
+    .brand img { width: 30px; height: 30px; }
+    .nav-links { display: flex; gap: 22px; margin-left: auto; align-items: center; }
+    .nav-links a { color: var(--muted); font-size: 15px; font-weight: 500; }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+    .lang {
+      background: none; border: 1px solid var(--line); color: var(--muted);
+      border-radius: 999px; padding: 4px 12px; font: 500 13px Inter, sans-serif; cursor: pointer;
+    }
+    .lang:hover { color: var(--text); border-color: var(--muted); }
+    @media (max-width: 720px) { .nav-links a.opt { display: none; } }
+
+    /* Hero */
+    .hero {
+      position: relative; overflow: hidden;
+      background: radial-gradient(1200px 600px at 75% 40%, #0b2a4a 0%, var(--bg) 60%);
+    }
+    .hero .wrap > * { min-width: 0; }
+    .hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center; padding-top: 72px; padding-bottom: 72px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      font: 500 13px "JetBrains Mono", monospace; color: var(--muted);
+      border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; background: var(--bg-2);
+    }
+    .badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--land); box-shadow: 0 0 10px var(--land); }
+    h1 { font-size: clamp(38px, 6vw, 64px); line-height: 1.05; letter-spacing: -0.03em; margin: 20px 0 18px; }
+    h1 em { font-style: normal; background: linear-gradient(90deg, var(--accent), var(--land)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .lede { font-size: 19px; color: var(--muted); max-width: 34em; margin: 0 0 30px; }
+    .cta { display: flex; flex-wrap: wrap; gap: 12px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 15px;
+      border: 1px solid var(--line); color: var(--text); background: var(--panel);
+    }
+    .btn:hover { text-decoration: none; border-color: var(--muted); }
+    .btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+    .btn.primary:hover { background: #fff; }
+    .btn svg { width: 18px; height: 18px; }
+    .note { margin-top: 16px; font-size: 14px; color: var(--muted); }
+    .globe { position: relative; aspect-ratio: 1; }
+    .globe img { width: 100%; height: 100%; animation: float 9s ease-in-out infinite; filter: drop-shadow(0 30px 80px rgba(60, 140, 220, .25)); }
+    @keyframes float { 50% { transform: translateY(-10px); } }
+    @media (prefers-reduced-motion: reduce) { .globe img { animation: none; } }
+    @media (max-width: 860px) {
+      .hero .wrap { grid-template-columns: 1fr; padding-top: 48px; gap: 32px; }
+      .globe { max-width: 420px; margin: 0 auto; width: 100%; }
+    }
+
+    /* Sections */
+    section { padding: 88px 0; }
+    section.alt { background: var(--bg-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .eyebrow { font: 500 13px "JetBrains Mono", monospace; color: var(--accent); text-transform: uppercase; letter-spacing: .08em; }
+    h2 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -0.02em; line-height: 1.15; margin: 10px 0 14px; }
+    .sub { color: var(--muted); font-size: 17px; max-width: 40em; margin: 0 0 44px; }
+
+    /* Features */
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .feature { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; }
+    .feature .ico { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--ocean); margin-bottom: 16px; }
+    .feature .ico svg { width: 22px; height: 22px; stroke: var(--text); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .feature h3 { margin: 0 0 6px; font-size: 18px; }
+    .feature p { margin: 0; color: var(--muted); font-size: 15px; }
+    @media (max-width: 900px) { .features { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 600px) { .features { grid-template-columns: 1fr; } }
+
+    /* Gallery */
+    .gallery { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+    .card .pic { padding: 18px; display: grid; place-items: center; flex: 1; background: radial-gradient(circle at 50% 50%, #0b2440, var(--panel) 70%); }
+    .card .pic img { max-height: 260px; width: auto; }
+    .card .cap { padding: 14px 18px; border-top: 1px solid var(--line); }
+    .card .cap b { display: block; font-size: 15px; }
+    .card .cap span { color: var(--muted); font-size: 13px; }
+    .w3 { grid-column: span 3; } .w2 { grid-column: span 2; }
+    @media (max-width: 900px) { .w3, .w2 { grid-column: span 3; } }
+    @media (max-width: 600px) { .gallery { grid-template-columns: 1fr; } .w3, .w2 { grid-column: auto; } }
+    .families { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 36px; }
+    .family { border-left: 2px solid var(--ocean); padding: 2px 0 2px 16px; }
+    .family b { font-size: 15px; }
+    .family p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+    @media (max-width: 760px) { .families { grid-template-columns: 1fr; } }
+
+    /* Steps */
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; counter-reset: step; }
+    .step { padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+    .step::before { counter-increment: step; content: counter(step, decimal-leading-zero); font: 500 14px "JetBrains Mono", monospace; color: var(--accent); }
+    .step h3 { margin: 8px 0 6px; font-size: 18px; }
+    .step p { margin: 0; color: var(--muted); font-size: 15px; }
+    @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
+
+    /* Roadmap */
+    .roadmap { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .roadmap li { display: grid; grid-template-columns: 90px 1fr auto; gap: 16px; align-items: center; padding: 16px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .roadmap .v { font: 500 14px "JetBrains Mono", monospace; color: var(--muted); }
+    .roadmap .t b { display: block; }
+    .roadmap .t span { color: var(--muted); font-size: 14px; }
+    .pill { font: 500 12px "JetBrains Mono", monospace; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+    .pill.done { color: var(--land); border-color: color-mix(in srgb, var(--land) 50%, transparent); }
+    .pill.now { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
+    @media (max-width: 600px) { .roadmap li { grid-template-columns: 1fr auto; } .roadmap .v { grid-column: 1 / -1; } }
+
+    /* Footer */
+    footer { padding: 40px 0 56px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+    footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 32px; justify-content: space-between; }
+    footer p { margin: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap nav">
+      <a class="brand" href="#"><img src="/favicon.svg" alt="">Geo-Utils</a>
+      <nav class="nav-links">
+        <a class="opt" href="#features" data-i18n="nav.features">Features</a>
+        <a class="opt" href="#projections" data-i18n="nav.projections">Projections</a>
+        <a class="opt" href="#roadmap" data-i18n="nav.roadmap">Roadmap</a>
+        <a href="https://github.com/chlewey/geoutils">GitHub</a>
+        <button class="lang" id="lang" type="button" aria-label="Español / English">ES</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div class="wrap">
+        <div>
+          <span class="badge"><span class="dot"></span><span data-i18n="hero.badge">Android · in development · v0.3</span></span>
+          <h1 data-i18n-html="hero.title">The whole world, in <em>any projection</em>.</h1>
+          <p class="lede" data-i18n="hero.lede">Geo-Utils reprojects equirectangular base maps and KML files into 14 map projections. Aim the map at any point, tilt it into oblique aspects, measure routes, and export the result as SVG or PNG.</p>
+          <div class="cta">
+            <a class="btn primary" href="https://github.com/chlewey/geoutils">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.6 18.3 5 18.3 5c.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5Z"/></svg>
+              <span data-i18n="hero.source">Source on GitHub</span>
+            </a>
+            <a class="btn" href="#projections" data-i18n="hero.see">See the projections</a>
+          </div>
+          <p class="note" data-i18n="hero.note">Not on Google Play yet — build it from source with Android Studio.</p>
+        </div>
+        <div class="globe">
+          <img src="/img/orthographic.svg" alt="Orthographic globe centered on the Atlantic, rendered by Geo-Utils" width="1200" height="1200">
+        </div>
+      </div>
+    </div>
+
+    <section id="features">
+      <div class="wrap">
+        <div class="eyebrow" data-i18n="features.eyebrow">What it does</div>
+        <h2 data-i18n="features.title">A map workshop in your pocket</h2>
+        <p class="sub" data-i18n="features.sub">Everything runs on the device. Start from a base map, add your own geographic data, and shape the projection until the map says what you need.</p>
+        <div class="features">
+          <div class="feature">
+            <div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 6"/></svg></div>
+            <h3 data-i18n="f1.t">Reproject base maps</h3>
+            <p data-i18n="f1.d">Bundled NASA Blue Marble, or open your own equirectangular PNG, JPEG or WebP. Every output pixel is inverse-projected and sampled.</p>
+          </div>
+          <div class="feature">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 18l5-9 4 5 3-4 4 8"/><circle cx="9" cy="9" r="1.5"/><circle cx="16" cy="10" r="1.5"/></svg></div>
+            <h3 data-i18n="f2.t">Draw KML on top</h3>
+            <p data-i18n="f2.d">Points, lines and polygons with their styles, densified along great circles and clipped cleanly at horizons and seams.</p>
+          </div>
+          <div class="feature">
+            <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18M3 12h18"/></svg></div>
+            <h3 data-i18n="f3.t">Aim it anywhere</h3>
+            <p data-i18n="f3.d">Set any center and azimuth, or define the map's "equator" from two points. Turn Mercator into transverse Mercator in a tap.</p>
+          </div>
+          <div class="feature">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 17c4-10 12-10 16 0"/><circle cx="4" cy="17" r="1.5"/><circle cx="20" cy="17" r="1.5"/></svg></div>
+            <h3 data-i18n="f4.t">Measure routes</h3>
+            <p data-i18n="f4.d">Great-circle and rhumb-line paths between two points, with distance and initial bearing, drawn right on the map.</p>
+          </div>
+          <div class="feature">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg></div>
+            <h3 data-i18n="f5.t">Export SVG or PNG</h3>
+            <p data-i18n="f5.d">Vector SVG with the raster embedded — opens in browsers and Inkscape — or a flat PNG. Save it or share it straight away.</p>
+          </div>
+          <div class="feature">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M3 6c3-2 6 2 9 0s6-2 9 0M3 12c3-2 6 2 9 0s6-2 9 0M3 18c3-2 6 2 9 0s6-2 9 0"/></svg></div>
+            <h3 data-i18n="f6.t">Interrupted maps, done right</h3>
+            <p data-i18n="f6.d">Goode homolosine keeps its lobes tied to the continents, with a choice of keeping Greenland divided, whole, or both.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="projections" class="alt">
+      <div class="wrap">
+        <div class="eyebrow" data-i18n="proj.eyebrow">14 projections</div>
+        <h2 data-i18n="proj.title">Rendered by the app itself</h2>
+        <p class="sub" data-i18n="proj.sub">Every image on this page was produced by Geo-Utils' own projection engine from the Blue Marble base map.</p>
+        <div class="gallery">
+          <figure class="card w3" style="margin:0">
+            <div class="pic"><img src="/img/mollweide.svg" alt="Mollweide projection" loading="lazy" width="1200" height="600"></div>
+            <figcaption class="cap"><b>Mollweide</b><span data-i18n="cap.mollweide">Equal-area, the whole world in an ellipse</span></figcaption>
+          </figure>
+          <figure class="card w3" style="margin:0">
+            <div class="pic"><img src="/img/goode.svg" alt="Goode homolosine projection" loading="lazy" width="1200" height="520"></div>
+            <figcaption class="cap"><b>Goode homolosine</b><span data-i18n="cap.goode">Interrupted equal-area, Greenland kept whole</span></figcaption>
+          </figure>
+          <figure class="card w2" style="margin:0">
+            <div class="pic"><img src="/img/azimuthal-polar.svg" alt="Polar azimuthal equidistant projection" loading="lazy" width="1200" height="1200"></div>
+            <figcaption class="cap"><b data-i18n="cap.aeq.t">Azimuthal equidistant</b><span data-i18n="cap.aeq">Centered on the North Pole</span></figcaption>
+          </figure>
+          <figure class="card w2" style="margin:0">
+            <div class="pic"><img src="/img/lambert-azimuthal.svg" alt="Lambert azimuthal equal-area projection centered on Asia" loading="lazy" width="1200" height="1200"></div>
+            <figcaption class="cap"><b data-i18n="cap.laea.t">Lambert azimuthal equal-area</b><span data-i18n="cap.laea">Oblique, centered on Asia</span></figcaption>
+          </figure>
+          <figure class="card w2" style="margin:0">
+            <div class="pic"><img src="/img/orthographic.svg" alt="Orthographic projection" loading="lazy" width="1200" height="1200"></div>
+            <figcaption class="cap"><b data-i18n="cap.ortho.t">Orthographic</b><span data-i18n="cap.ortho">The globe as seen from space</span></figcaption>
+          </figure>
+          <figure class="card w3" style="margin:0">
+            <div class="pic"><img src="/img/equal-earth.svg" alt="Equal Earth projection" loading="lazy" width="1200" height="584"></div>
+            <figcaption class="cap"><b>Equal Earth</b><span data-i18n="cap.ee">Modern equal-area world map</span></figcaption>
+          </figure>
+          <figure class="card w3" style="margin:0">
+            <div class="pic"><img src="/img/sinusoidal.svg" alt="Sinusoidal projection" loading="lazy" width="1200" height="600"></div>
+            <figcaption class="cap"><b data-i18n="cap.sin.t">Sinusoidal</b><span data-i18n="cap.sin">True scale along every parallel</span></figcaption>
+          </figure>
+        </div>
+        <div class="families">
+          <div class="family"><b data-i18n="fam.az">Azimuthal</b><p data-i18n="fam.az.d">Orthographic, azimuthal equidistant, Lambert azimuthal equal-area.</p></div>
+          <div class="family"><b data-i18n="fam.cyl">Cylindrical</b><p data-i18n="fam.cyl.d">Equirectangular, Mercator, Lambert, Behrmann, Hobo–Dyer, Gall–Peters, central cylindrical.</p></div>
+          <div class="family"><b data-i18n="fam.pseudo">Pseudocylindrical</b><p data-i18n="fam.pseudo.d">Sinusoidal, Mollweide, Equal Earth, Goode homolosine.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="eyebrow" data-i18n="how.eyebrow">How it works</div>
+        <h2 data-i18n="how.title">Three steps to a map</h2>
+        <p class="sub" data-i18n="how.sub">No accounts, no servers. Your files stay on your phone.</p>
+        <div class="steps">
+          <div class="step"><h3 data-i18n="s1.t">Pick your layers</h3><p data-i18n="s1.d">Choose the bundled Blue Marble or your own image, and optionally open a KML file.</p></div>
+          <div class="step"><h3 data-i18n="s2.t">Shape the projection</h3><p data-i18n="s2.d">Choose a projection, set its center, azimuth and parameters, and pinch to explore.</p></div>
+          <div class="step"><h3 data-i18n="s3.t">Export</h3><p data-i18n="s3.d">Save or share the map as SVG or PNG, with the base map's attribution included.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="roadmap" class="alt">
+      <div class="wrap">
+        <div class="eyebrow" data-i18n="rm.eyebrow">Roadmap</div>
+        <h2 data-i18n="rm.title">Where it's going</h2>
+        <p class="sub"><span data-i18n="rm.sub">Each milestone leaves the app usable. The full plan is in</span> <a href="https://github.com/chlewey/geoutils/blob/main/ROADMAP.md">ROADMAP.md</a>.</p>
+        <ol class="roadmap">
+          <li><span class="v">v0.1</span><span class="t"><b data-i18n="m1.t">Orthographic MVP</b><span data-i18n="m1.d">Base map + KML on a globe, SVG and PNG export</span></span><span class="pill done" data-i18n="st.done">done</span></li>
+          <li><span class="v">v0.2</span><span class="t"><b data-i18n="m2.t">More projections</b><span data-i18n="m2.d">14 projections with oblique and transverse aspects</span></span><span class="pill done" data-i18n="st.done">done</span></li>
+          <li><span class="v">v0.3</span><span class="t"><b data-i18n="m3.t">Extensible projections</b><span data-i18n="m3.d">Projection registry, geodesy tools; next: conic and hemispheric maps</span></span><span class="pill now" data-i18n="st.now">in progress</span></li>
+          <li><span class="v">v0.4</span><span class="t"><b data-i18n="m4.t">Base map library</b><span data-i18n="m4.d">Manage base maps, saved configurations, places, export options</span></span><span class="pill" data-i18n="st.next">planned</span></li>
+          <li><span class="v">v0.5</span><span class="t"><b data-i18n="m5.t">Downloadable base maps</b><span data-i18n="m5.d">A catalog of openly licensed maps, including night lights and planets</span></span><span class="pill" data-i18n="st.next">planned</span></li>
+          <li><span class="v">v1.0</span><span class="t"><b data-i18n="m6.t">Interactive maps</b><span data-i18n="m6.d">Drag to spin the globe, GPU reprojection, live re-rendering</span></span><span class="pill" data-i18n="st.next">planned</span></li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p>Geo-Utils · <a href="https://github.com/chlewey/geoutils">github.com/chlewey/geoutils</a></p>
+      <p data-i18n="foot.attr">Base map imagery: NASA Earth Observatory, Blue Marble.</p>
+    </div>
+  </footer>
+
+  <script>
+    const ES = {
+      "nav.features": "Funciones", "nav.projections": "Proyecciones", "nav.roadmap": "Hoja de ruta",
+      "hero.badge": "Android · en desarrollo · v0.3",
+      "hero.title": "El mundo entero, en <em>cualquier proyección</em>.",
+      "hero.lede": "Geo-Utils reproyecta mapas base equirrectangulares y archivos KML en 14 proyecciones cartográficas. Centra el mapa en cualquier punto, inclínalo en aspectos oblicuos, mide rutas y exporta el resultado en SVG o PNG.",
+      "hero.source": "Código en GitHub", "hero.see": "Ver las proyecciones",
+      "hero.note": "Aún no está en Google Play: compílala desde el código con Android Studio.",
+      "features.eyebrow": "Qué hace", "features.title": "Un taller de mapas en el bolsillo",
+      "features.sub": "Todo se ejecuta en el dispositivo. Parte de un mapa base, añade tus propios datos geográficos y ajusta la proyección hasta que el mapa diga lo que necesitas.",
+      "f1.t": "Reproyecta mapas base", "f1.d": "Blue Marble de la NASA incluido, o abre tu propia imagen equirrectangular PNG, JPEG o WebP. Cada píxel de salida se proyecta a la inversa y se muestrea.",
+      "f2.t": "Dibuja KML encima", "f2.d": "Puntos, líneas y polígonos con sus estilos, densificados por círculos máximos y recortados limpiamente en horizontes y costuras.",
+      "f3.t": "Apúntalo a cualquier lugar", "f3.d": "Fija cualquier centro y acimut, o define el «ecuador» del mapa con dos puntos. Convierte la Mercator en Mercator transversa con un toque.",
+      "f4.t": "Mide rutas", "f4.d": "Ortodrómicas y loxodrómicas entre dos puntos, con distancia y rumbo inicial, dibujadas sobre el mapa.",
+      "f5.t": "Exporta SVG o PNG", "f5.d": "SVG vectorial con la imagen incrustada —se abre en navegadores e Inkscape— o un PNG plano. Guárdalo o compártelo al instante.",
+      "f6.t": "Mapas interrumpidos, bien hechos", "f6.d": "La homolosena de Goode mantiene sus lóbulos ligados a los continentes, con Groenlandia dividida, entera o ambas.",
+      "proj.eyebrow": "14 proyecciones", "proj.title": "Generadas por la propia app",
+      "proj.sub": "Todas las imágenes de esta página las produjo el motor de proyecciones de Geo-Utils a partir del mapa base Blue Marble.",
+      "cap.mollweide": "Equivalente, el mundo entero en una elipse", "cap.goode": "Equivalente interrumpida, con Groenlandia entera",
+      "cap.aeq.t": "Azimutal equidistante", "cap.aeq": "Centrada en el Polo Norte",
+      "cap.laea.t": "Azimutal equivalente de Lambert", "cap.laea": "Oblicua, centrada en Asia",
+      "cap.ortho.t": "Ortográfica", "cap.ortho": "El globo visto desde el espacio",
+      "cap.ee": "Mapamundi equivalente moderno", "cap.sin.t": "Sinusoidal", "cap.sin": "Escala verdadera en todos los paralelos",
+      "fam.az": "Azimutales", "fam.az.d": "Ortográfica, azimutal equidistante, azimutal equivalente de Lambert.",
+      "fam.cyl": "Cilíndricas", "fam.cyl.d": "Equirrectangular, Mercator, Lambert, Behrmann, Hobo–Dyer, Gall–Peters, cilíndrica central.",
+      "fam.pseudo": "Pseudocilíndricas", "fam.pseudo.d": "Sinusoidal, Mollweide, Equal Earth, homolosena de Goode.",
+      "how.eyebrow": "Cómo funciona", "how.title": "Tres pasos hasta un mapa", "how.sub": "Sin cuentas ni servidores. Tus archivos se quedan en tu teléfono.",
+      "s1.t": "Elige tus capas", "s1.d": "Usa el Blue Marble incluido o tu propia imagen y, si quieres, abre un archivo KML.",
+      "s2.t": "Ajusta la proyección", "s2.d": "Elige una proyección, fija su centro, acimut y parámetros, y pellizca para explorar.",
+      "s3.t": "Exporta", "s3.d": "Guarda o comparte el mapa en SVG o PNG, con la atribución del mapa base incluida.",
+      "rm.eyebrow": "Hoja de ruta", "rm.title": "Hacia dónde va", "rm.sub": "Cada hito deja la app usable. El plan completo está en",
+      "m1.t": "MVP ortográfico", "m1.d": "Mapa base + KML sobre un globo, exportación SVG y PNG",
+      "m2.t": "Más proyecciones", "m2.d": "14 proyecciones con aspectos oblicuos y transversos",
+      "m3.t": "Proyecciones extensibles", "m3.d": "Registro de proyecciones, herramientas geodésicas; siguiente: cónicas y hemisféricas",
+      "m4.t": "Biblioteca de mapas base", "m4.d": "Gestión de mapas base, configuraciones guardadas, lugares, opciones de exportación",
+      "m5.t": "Mapas base descargables", "m5.d": "Un catálogo de mapas con licencia abierta, con luces nocturnas y planetas",
+      "m6.t": "Mapas interactivos", "m6.d": "Arrastra para girar el globo, reproyección en GPU, renderizado en vivo",
+      "st.done": "hecho", "st.now": "en curso", "st.next": "previsto",
+      "foot.attr": "Imágenes del mapa base: NASA Earth Observatory, Blue Marble."
+    };
+    const EN = {};
+    document.querySelectorAll("[data-i18n]").forEach(el => EN[el.dataset.i18n] = el.textContent);
+    document.querySelectorAll("[data-i18n-html]").forEach(el => EN[el.dataset.i18nHtml] = el.innerHTML);
+
+    function apply(lang) {
+      const dict = lang === "es" ? ES : EN;
+      document.documentElement.lang = lang;
+      document.querySelectorAll("[data-i18n]").forEach(el => { const v = dict[el.dataset.i18n]; if (v) el.textContent = v; });
+      document.querySelectorAll("[data-i18n-html]").forEach(el => { const v = dict[el.dataset.i18nHtml]; if (v) el.innerHTML = v; });
+      document.getElementById("lang").textContent = lang === "es" ? "EN" : "ES";
+      try { localStorage.setItem("lang", lang); } catch (e) {}
+    }
+    let lang = "en";
+    try { lang = localStorage.getItem("lang") || (navigator.language || "en").slice(0, 2); } catch (e) {}
+    apply(lang === "es" ? "es" : "en");
+    document.getElementById("lang").addEventListener("click", () => apply(document.documentElement.lang === "es" ? "en" : "es"));
+  </script>
+</body>
+</html>

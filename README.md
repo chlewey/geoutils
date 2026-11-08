@@ -29,28 +29,41 @@ See [ROADMAP.md](ROADMAP.md) for the planned milestones.
 
 Output projections (input bitmaps are equirectangular):
 
-- **Azimuthal:** orthographic (globe view), azimuthal equidistant, Lambert
-  azimuthal equal-area
+- **Hemispheric:** orthographic (globe view), azimuthal equidistant, Lambert
+  azimuthal equal-area and Mollweide limited to one hemisphere, Nicolosi
+  globular
+- **Azimuthal:** azimuthal equidistant, Lambert azimuthal equal-area, with
+  one-tap polar aspects
 - **Cylindrical:** equirectangular (plate carrée), Mercator, cylindrical
   equal-area (Lambert, Behrmann, Hobo–Dyer, Gall–Peters), central cylindrical
 - **Pseudocylindrical:** sinusoidal, Mollweide, Equal Earth, Goode homolosine
+- **Conic:** Albers equal-area, Lambert conformal conic, equidistant conic,
+  each with two standard parallels
+- **Two hemispheres:** any hemispheric map on two touching disks, split along
+  a meridian (by default 30° W / 150° E) or any great circle, or as northern
+  and southern hemispheres
 
-Every projection can be aimed at any center and turned by an azimuth: the
-sphere is rotated so the chosen point is at the middle of the map, then
+Continuous projections can be aimed at any center and turned by an azimuth:
+the sphere is rotated so the chosen point is at the middle of the map, then
 projected. Cylindrical and pseudocylindrical maps start in the normal aspect
 (latitude and azimuth off); turning those on gives oblique and transverse
-aspects.
+aspects. Interrupted maps (Goode) stay tied to geography: only the central
+meridian and north/south up change, plus Goode's Greenland option (divided,
+extended or both).
 
 ## Spherical model and tools
 
 The first versions assume the Earth is a perfect sphere. On that basis the app
-will:
+can:
 
 - change the coordinate system, for example by moving the center point or
   choosing a different central great circle (the "equator");
 - define the central great circle from two points;
 - find the shortest path (great circle) between two points;
-- find the rhumb line (loxodrome) between two points.
+- find the rhumb line (loxodrome) between two points;
+- draw distance rings and bearing lines from a point, and the area within a
+  radius of it;
+- draw the tropics and the polar circles.
 
 ## Project structure
 
@@ -67,12 +80,15 @@ net/interlecto/geoutils/
 
 ## Status
 
-Milestones 1 and 2 are implemented. Open the bundled Blue Marble or your own
+Milestones 1 to 3 are implemented. Open the bundled Blue Marble or your own
 equirectangular image and overlay a KML file. Project them in any of 14
 projections (orthographic, azimuthal, cylindrical and pseudocylindrical),
-aimed at any center and azimuth, including oblique and transverse aspects.
-Zoom and pan, and save or share the result as SVG or PNG. See
-[ROADMAP.md](ROADMAP.md) for what's next.
+aimed at any center and azimuth, including oblique and transverse aspects,
+or with the equator through two chosen points. Draw great-circle and rhumb
+routes with their distances. Zoom and pan, and save or share the result as
+SVG or PNG. See [ROADMAP.md](ROADMAP.md) for what's next.
+
+To add a projection, see [docs/ADDING_A_PROJECTION.md](docs/ADDING_A_PROJECTION.md).
 
 ## Building
 

@@ -34,11 +34,31 @@ class ProjectionsTest {
                 repeat(200) {
                     val g = GeoPoint(random.nextDouble(-180.0, 180.0), random.nextDouble(-89.0, 89.0))
                     val p = projection.forward(g) ?: return@repeat
-                    // Skip points clamped by Mercator / central cylindrical.
+                    // Skip points clamped by Mercator / central cylindrical / Lambert conformal conic.
                     val back = projection.inverse(p) ?: return@repeat
                     val error = g.toVec3().angleTo(back.toVec3())
-                    val clamped = type == ProjectionCatalog.MERCATOR || type == ProjectionCatalog.CENTRAL_CYLINDRICAL
+                    val clamped = type == ProjectionCatalog.MERCATOR || type == ProjectionCatalog.CENTRAL_CYLINDRICAL ||
+                        type == ProjectionCatalog.LAMBERT_CONFORMAL_CONIC
                     if (!clamped) assertTrue("${type.id}: $g came back as $back", error < 1e-6)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun graticuleLinesNeverJumpAcrossTheMap() {
+        // A vertex right on a cut must stay on the side its path is on; a jump
+        // to the other side shows as a chord across a conic map, or across the
+        // gap between Goode's lobes (whose cuts fall on graticule meridians).
+        for (type in ProjectionCatalog.all) {
+            for (center in listOf(GeoPoint(type.defaultLongitude, 0.0), GeoPoint(10.0, 0.0), GeoPoint(-170.0, 0.0))) {
+                val projection = type.create(center)
+                val limit = 0.05 * maxOf(projection.bounds.width, projection.bounds.height)
+                for (line in Graticule.lines()) for (piece in projection.projectLine(line)) {
+                    for (i in 1 until piece.size) {
+                        val jump = hypot(piece[i].x - piece[i - 1].x, piece[i].y - piece[i - 1].y)
+                        assertTrue("${type.id} at $center: jump of $jump", jump < limit)
+                    }
                 }
             }
         }

@@ -13,6 +13,13 @@ Conventions used throughout:
   the same order KML uses.
 - **Equirectangular input.** A base map bitmap covers 360° × 180°: x = 0 is
   180° W, y = 0 is 90° N, and the aspect ratio is 2:1.
+- **Earlier projects.** Items marked *(from …)* port ideas, code or data from
+  the author's earlier map tools:
+  [globe-prj](https://github.com/chlewey/globe-prj) (Python),
+  [kml2svg](https://github.com/chlewey/kml2svg) (PHP) and
+  [maps](https://github.com/chlewey/maps) (PHP). They are reimplemented here
+  in Kotlin, not copied. Third-party data in them (GADM boundaries, KMLs of
+  unknown origin) is not bundled.
 
 ---
 
@@ -159,10 +166,10 @@ Mollweide, Equal Earth, Goode):
       settings) while the app runs, so switching back and forth doesn't lose
       it.
 
-Known issue (to fix in milestone 3): Goode homolosine is drawn through the
-generic rotation wrapper, so its interruptions move with the center, latitude
-and azimuth. That's wrong for an interrupted projection: its lobes and cuts
-are laid out for the continents and must stay tied to geography.
+Known issue (fixed in milestone 3): Goode homolosine is drawn through the
+generic rotation wrapper, so latitude and azimuth tilt the sphere under its
+lobes, which gives incoherent maps. Its lobes and cuts are laid out for the
+continents; only the central meridian may move them.
 
 Status: implemented. All 14 projections were checked visually with Blue Marble
 and Natural Earth countries, including oblique Mollweide and transverse
@@ -175,35 +182,123 @@ Mercator, and pass forward/inverse round trips in normal and oblique aspects.
 
 Goal: adding a projection is cheap, and any projection can be re-aimed.
 
-- [ ] Projection registry: each projection declares an id, display name,
-      parameters (with ranges and defaults) and capabilities (has an inverse,
-      is interrupted, is azimuthal). The UI is generated from that description.
-- [ ] Set a new "equator" (central great circle) from **two points**, on top
-      of the rotated coordinate system from milestone 2.
-- [ ] **Discontinuous (interrupted) projections are not rotated.** Goode
-      homolosine, and any future interrupted or otherwise discontinuous
-      projection, keeps its lobes and cuts fixed to geography instead of
-      going through the rotation wrapper. The registry marks these
-      projections, and the UI disables (or limits) center, latitude and
-      azimuth for them.
+- [x] Projection registry: each projection declares an id, display name,
+      family, default longitude, aspect controls (rotate, or central meridian
+      and north/south up) and its own parameters (angles with ranges and
+      defaults, or choices). The UI builds the parameter and aspect controls
+      from that description.
+- [x] Set a new "equator" (central great circle) from **two points**, on top
+      of the rotated coordinate system from milestone 2 (View tab).
+- [x] Geodesy tools in `geometry`, drawable as overlays (Tools tab):
+  - [x] Great-circle (shortest) path, distance and initial bearing between
+        two points.
+  - [x] Rhumb line (loxodrome) path, distance and bearing between two points.
+- [x] Contributor guide: [docs/ADDING_A_PROJECTION.md](docs/ADDING_A_PROJECTION.md).
+- [x] Equirectangular's standard parallel is now a parameter (0°–70°).
+- [x] **Discontinuous (interrupted) projections don't use the standard
+      aspect parameters.** Goode homolosine, and any future interrupted or
+      otherwise discontinuous projection, declares its own tailored
+      parameters in the registry instead of the generic center/latitude/
+      azimuth:
+  - [x] **Central meridian:** allowed; it turns the sphere about the polar axis,
+    so the whole map, lobes included, shifts with it.
+  - [x] **Latitude and azimuth:** not available, since they give incoherent
+    results with lobes.
+  - [x] **Orientation:** at most a toggle between 0° and 180° (north up or
+    south up). This turns the finished map in the plane, keeping the lobes
+    tied to geography; it does not rotate the sphere.
+  - [x] **Goode's Greenland option:** the standard northern interruption at
+    40° W splits Greenland. Offer *divided* (standard), *extended* (the
+    western lobe extended east so Greenland is whole), or *both* (Greenland
+    whole in the extended lobe and also shown split). *Extended* moves the
+    cut to 10° W north of 60° N (a stepped cut along 60° N), which keeps
+    Greenland and Iceland whole and leaves West Africa and Ireland alone.
+    *Both* draws the divided map plus Greenland's eastern part a second time
+    in the extended position.
+
+Status: implemented, including the projection families below (conic,
+hemispheric and two-hemisphere maps) and the overlay tools. Open: whether to
+add the circular globular (see the last item). Rendering the conics also
+exposed two cases where a vertex lying exactly on a cut (the antimeridian, or
+a Goode interruption that falls on a graticule meridian) was drawn on the
+wrong side, which drew chords across conic maps and across Goode's gaps;
+both are fixed and covered by a test.
 
 ### More projection families
 
-- [ ] **Conic:** Albers equal-area, Lambert conformal conic, equidistant
-      conic, each with one or two standard parallels as parameters.
-      Rotation works for conics as for cylindricals, but the cut runs from
-      the apex and the map is a sector of an annulus.
-- [ ] **Hemispheric:** one hemisphere on its own (for example an azimuthal
-      or orthographic map of the eastern or western hemisphere), with a
-      fixed, named center.
-- [ ] **Double hemispheric:** two hemispheres side by side in one image
-      (western/eastern, or northern/southern), each clipped to its own disk.
-      This needs a projection made of several sub-maps, the same structure
-      interrupted projections need.
-- [ ] Geodesy tools in `geometry`, drawable as overlays:
-  - [ ] Great-circle (shortest) path and distance between two points.
-  - [ ] Rhumb line (loxodrome) and distance between two points.
-- [ ] Contributor guide: how to add a projection (interface, tests, registry entry).
+- [x] **Conic:** Albers equal-area, Lambert conformal conic, equidistant
+      conic, each with two standard parallels as parameters (equal for a
+      tangent cone). Rotation works for conics as for cylindricals, but the
+      cut runs from the apex and the map is a sector of an annulus. Lambert
+      conformal stops at 60° on the side away from the cone (the far pole is
+      infinitely far), and parallels symmetric about the equator are kept
+      from turning the cone into a cylinder.
+- [x] **Polar shortcut for azimuthals:** one-click N / S buttons next to the
+      center controls of the azimuthal projections (equidistant, Lambert
+      equal-area). They set the center latitude to ±90° and keep the
+      longitude, which then sets which meridian points down (or up).
+- [x] **Hemispheric:** one hemisphere on its own, clipped to a disk at 90°
+      from the center. Parametrized like the azimuthals (center longitude,
+      latitude, azimuth), plus a quick **N / Equator / S** setting for the
+      latitude (90°, 0°, −90°). Projections:
+  - [x] Orthographic (the current one, which is already hemispheric).
+  - [x] Azimuthal equidistant, hemisphere only (disk radius π/2).
+  - [x] Lambert azimuthal equal-area, hemisphere only (disk radius √2).
+  - [x] Mollweide, hemisphere only: the circle between ±90° from the central
+        meridian, in the rotated frame.
+  - [x] Nicolosi globular (new; hemispheric by nature).
+
+  For the non-azimuthal ones (Mollweide, Nicolosi) the disk's horizontal
+  line is the "equator" of the rotated frame.
+- [x] **Double hemispheric:** any of the hemispheric projections above, as two
+      disks tangent to each other in one image. This needs a projection made
+      of several sub-maps, the same structure interrupted projections use
+      (`Composite`). Two modes:
+  - **Polar** (northern and southern hemispheres). Longitude is the meridian
+    shared by both disks at the tangent point (the point on the equator at
+    that longitude). Azimuth is the image angle of the line through both
+    disk centers, which is that meridian (and the "equator" of each disk for
+    Mollweide and Nicolosi); 0° puts the disks side by side. Latitude does
+    not apply.
+  - **Non-polar** (for example western and eastern hemispheres). Longitude
+    and latitude are the tangent point; latitude is grayed out by default
+    (0°). Azimuth is the bearing of the split great circle at the tangent
+    point; 0° runs north–south, so the disks sit side by side with north up.
+    With latitude 0° the longitude *is* the split meridian, so the default
+    longitude is **30° W** (split at 30° W / 150° E), not the device's
+    longitude.
+  - Both modes are the same construction: a frame at the tangent point with
+    the split circle as its "meridian" and the two disk centers 90° to
+    either side. Polar mode is that frame with latitude fixed at 0° and the
+    split fixed on the equator (bearing 90°), with the azimuth applied as a
+    rotation of the finished image. Hence the azimuth of the two modes
+    differs by 90°: polar names the line of centers, non-polar names the
+    tangent.
+
+### Overlay tools from earlier projects
+
+- [x] `Geodesy.destination(point, distance, bearing)`: the point reached
+      along a great circle *(from kml2svg `move_coor`)*. The tools below
+      build on it.
+- [x] **Range rings and azimuth rays** from a point: circles every N km (by
+      default 1000 km) and bearings every 15° (Tools tab). On the azimuthal
+      equidistant map they come out as concentric circles and straight
+      lines *(from kml2svg `equi.php`)*.
+- [x] **Geodesic circle:** everything within a radius of a point, drawn as a
+      closed polygon *(from kml2svg `circle()`)*. Up to 10 000 km, short of
+      a hemisphere, so the filled side is the one around the center.
+- [x] **Special parallels** in the graticule: tropics of Cancer and
+      Capricorn and the polar circles, dashed, as an option
+      *(from kml2svg `projection.php`)*.
+- [ ] Candidate for the hemispheric family: the **circular equal-area
+      globular** (`cirq_ea`), a hemisphere on a disk of radius √2 with
+      circular-arc meridians *(from kml2svg `circ.php`)*. Checked: it is
+      **not** equal-area. The meridians are placed so the area between the
+      central meridian and meridian λ is proportional to λ (the circular
+      segment area matches `getLm`), but each meridian is divided evenly in
+      φ, while equal area would need the area below parallel φ to grow as
+      sin φ. Options: add it as it is (a globular that is equal-area only in
+      longitude), or derive a truly equal-area spacing along each arc first.
 
 ## Milestone 4: Base map library (v0.4)
 
@@ -220,6 +315,59 @@ Goal: keep and manage more than one base map.
 - [ ] Large-image handling: tiled or downsampled decoding so 8K–21K source images
       don't exhaust memory.
 
+### Export options
+
+- [ ] Export dialog with configurable parameters before saving or sharing
+      (SVG and PNG):
+  - **Clip:** the region of the map to export. By default, whatever is
+    shown on screen (the viewer's current zoom and pan, such as the
+    width-fitted Mercator with its top and bottom cut off). Other choices:
+    the whole map, or a custom rectangle.
+  - **Scale:** output size, as a pixel width (height follows from the clip)
+    or a multiple of the on-screen size. PNG renders at that size; SVG uses
+    it for its dimensions and the embedded raster's resolution.
+- [ ] The SVG clips to the chosen region (`viewBox`), and its embedded raster
+      covers only that region.
+- [ ] Simplify vector paths at the output resolution (Douglas–Peucker), so
+      large KMLs give small SVGs *(idea from maps `reduce.php`, which only
+      dropped collinear points)*.
+
+### Overlays and KML
+
+- [ ] **Bundled continents overlay:** `Continents.kml` *(from kml2svg)*, the
+      author's own work (CC0), used here under the project's license. The
+      continents with their subregions (Africa N/E/W/C, Asia N/E/S/SE/W/C, …)
+      and the oceans (Atlantic, Indian), with styles per area. It is 2.5 MB
+      of KML, so simplify it and store it compressed (KMZ) in `assets/`, and
+      offer it in the KML picker next to "Open KML…", the way Blue Marble is
+      offered as a base map.
+- [ ] **KMZ input** (moved up from Later / ideas): a zip with `doc.kml` and
+      its resources.
+- [ ] Per layer, how segments between KML vertices are drawn: along great
+      circles (as now, like Google Earth) or along parallels / rhumb lines,
+      so borders traced on a parallel (49° N) stay on it
+      *(from kml2svg `mkline2`)*.
+- [ ] **Export overlays as KML:** routes, range rings and circles, besides
+      SVG and PNG *(from globe-prj `as_kml`, kml2svg `equi.php`)*.
+
+### Places (center presets)
+
+- [ ] Room table of places: name, country, longitude, latitude, source
+      (bundled, user or downloaded).
+- [ ] Prefilled with an initial list, bundled as JSON in `assets/`: Moscow,
+      London, New York, Tokyo, Sydney, Johannesburg, Lagos, Dhaka, Mecca,
+      Buenos Aires.
+- [ ] "Center on…" menu next to the center controls: pick a place, search by
+      name. "My location" (GPS) sits at the top of the list as a place.
+- [ ] A place sets the center the same way GPS does:
+  - azimuthal projections: the place becomes the center (longitude and
+    latitude);
+  - cylindrical and pseudocylindrical projections: only the central
+    meridian (longitude); latitude and azimuth stay as they are (off by
+    default).
+- [ ] Add a place from the current center, or by typing a name and
+      coordinates; rename and delete user places.
+
 ## Milestone 5: Downloadable base maps (v0.5)
 
 Goal: get base maps from a catalog rather than bundling them.
@@ -231,6 +379,9 @@ Goal: get base maps from a catalog rather than bundling them.
       checksum verification.
 - [ ] Choice of resolution per entry, with a storage usage display.
 - [ ] Attribution and license shown per map and embedded in exported files.
+- [ ] Downloadable place lists (for example capitals, or all cities above a
+      population threshold, from GeoNames or Natural Earth populated places),
+      imported into the places table with their source and license.
 
 ## Milestone 6: Interactive maps (v1.0)
 
@@ -248,7 +399,39 @@ panning a fixed image.
       reuse it).
 - [ ] Tap a feature to see its KML name and description; tap two points to draw a
       great-circle or rhumb path between them.
-- [ ] Export the current view at a chosen resolution or as SVG.
+- [ ] Spherical polygon tools, needed for tapping and for labels: point in
+      polygon by winding number on the sphere, a polygon's center from its
+      normal vector, and holes found by containment for KMLs that store
+      rings as separate polygons *(from globe-prj `GeoTag.py`, kml2svg
+      `fixmap.php`)*.
+- [ ] Export the current view at a chosen resolution or as SVG (builds on
+      the export options from milestone 4).
+
+## Milestone 7: Thematic maps (v1.1)
+
+Goal: color a KML's areas by data *(from maps)*.
+
+- [ ] Load a CSV and join its rows to KML placemarks by name, with an alias
+      table to match differing names (accents, abbreviations, codes)
+      *(from maps `name2code`, kml2svg `[alias]` sections)*.
+- [ ] Choropleth: pick a column, classes (equal intervals, quantiles), a
+      color ramp and a legend; areas without data shown apart.
+- [ ] Labels at each area's center (spherical polygon tools, milestone 6).
+- [ ] Values in the exported SVG (each area's `<title>` with name and
+      value).
+
+## Milestone 8: KML topology editing (v1.2)
+
+Goal: reshape KML areas with editing lines, for historical and fictional
+maps *(from kml2svg `fixmap.php`; low priority)*.
+
+- [ ] Edit commands drawn as lines in a special folder: split an area along
+      a line, delete, drill (holes), reshape from another area, copy,
+      rename/move between folders.
+- [ ] Shared borders: an edit applies to every area that uses that border.
+- [ ] Aliases and per-area styles from a configuration, statistics (areas,
+      point counts), and a folder for edits that failed.
+- [ ] Output as KML.
 
 ## Later / ideas
 
@@ -256,7 +439,8 @@ panning a fixed image.
   in addition to SVG with an embedded bitmap.
 - Ellipsoidal Earth (WGS84) for projections where it matters (Mercator, transverse
   Mercator).
-- More input formats: GeoJSON, GPX, KMZ, shapefile, and SVG icons for placemarks.
+- More input formats: GeoJSON, GPX, shapefile, and SVG icons for placemarks
+  (KMZ moved to milestone 4).
 - Input bitmaps in projections other than equirectangular (inverse-project
   them to equirectangular first).
 - Tissot indicatrix and distortion heatmaps.

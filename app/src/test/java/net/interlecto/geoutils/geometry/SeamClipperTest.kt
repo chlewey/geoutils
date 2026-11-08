@@ -89,7 +89,7 @@ class SeamClipperTest {
     fun outlinesAreClosedLoopsInsideTheBounds() {
         for (type in ProjectionCatalog.all) {
             val projection = type.create(GeoPoint(0.0, 0.0))
-            val outline = projection.outline()
+            val outline = projection.outline().flatten()
             assertTrue(type.id, outline.size > 4)
             val b = projection.bounds
             assertTrue(type.id, outline.all { it.x >= b.minX - eps && it.x <= b.maxX + eps })

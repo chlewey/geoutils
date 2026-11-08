@@ -2,6 +2,7 @@ package net.interlecto.geoutils.shared.render
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.DashPathEffect
 import android.graphics.Paint
 import android.graphics.Path
 import net.interlecto.geoutils.domain.model.MapScene
@@ -33,6 +34,15 @@ object SceneCanvasRenderer {
             canvas.drawPath(path, paint)
         }
 
+        if (scene.specialParallels.isNotEmpty()) {
+            val paint = strokePaint(SvgWriter.SPECIAL_PARALLEL_COLOR, 0.75f * s).apply {
+                pathEffect = DashPathEffect(SvgWriter.SPECIAL_PARALLEL_DASH.map { it * s }.toFloatArray(), 0f)
+            }
+            val path = Path()
+            for (line in scene.specialParallels) path.addPolyline(line, closed = false)
+            canvas.drawPath(path, paint)
+        }
+
         for (shape in scene.shapes) {
             val style = shape.style
             when (shape) {
@@ -57,7 +67,7 @@ object SceneCanvasRenderer {
             }
         }
 
-        val outline = Path().apply { addPolyline(scene.outline, closed = true) }
+        val outline = Path().apply { for (loop in scene.outlines) addPolyline(loop, closed = true) }
         canvas.drawPath(outline, strokePaint(SvgWriter.OUTLINE_COLOR, 1.5f * s))
 
         scene.attribution?.let { text ->

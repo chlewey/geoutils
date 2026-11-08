@@ -15,6 +15,10 @@ import kotlin.math.roundToLong
 object SvgWriter {
 
     const val GRATICULE_COLOR = 0x59FFFFFF
+    const val SPECIAL_PARALLEL_COLOR = 0xA6FFFFFF.toInt()
+
+    /** Dash and gap of the special parallels, in pixels at a stroke scale of 1. */
+    val SPECIAL_PARALLEL_DASH = floatArrayOf(6f, 4f)
     const val OUTLINE_COLOR = 0xFF9FB3C8.toInt()
 
     fun write(scene: MapScene, rasterDataUri: String?, title: String? = null): String = buildString {
@@ -26,7 +30,7 @@ object SvgWriter {
         if (title != null) append("  <title>").append(escape(title)).append("</title>\n")
 
         append("  <defs>\n    <clipPath id=\"map-clip\"><path d=\"")
-        appendPath(scene.outline, closed = true)
+        for (loop in scene.outlines) appendPath(loop, closed = true)
         append("\"/></clipPath>\n  </defs>\n")
 
         if (rasterDataUri != null) {
@@ -47,6 +51,21 @@ object SvgWriter {
             append("  </g>\n")
         }
 
+        if (scene.specialParallels.isNotEmpty()) {
+            append("  <g id=\"special-parallels\" fill=\"none\"")
+            appendColor("stroke", SPECIAL_PARALLEL_COLOR)
+            append(" stroke-width=\"").appendNumber(0.75 * s).append('"')
+            append(" stroke-dasharray=\"")
+            appendNumber(SPECIAL_PARALLEL_DASH[0] * s.toDouble()).append(',')
+            appendNumber(SPECIAL_PARALLEL_DASH[1] * s.toDouble()).append("\">\n")
+            for (line in scene.specialParallels) {
+                append("    <path d=\"")
+                appendPath(line, closed = false)
+                append("\"/>\n")
+            }
+            append("  </g>\n")
+        }
+
         append("  <g id=\"features\" stroke-linejoin=\"round\" stroke-linecap=\"round\">\n")
         for (shape in scene.shapes) appendShape(shape, s)
         append("  </g>\n")
@@ -54,7 +73,7 @@ object SvgWriter {
         append("  <path id=\"outline\" fill=\"none\"")
         appendColor("stroke", OUTLINE_COLOR)
         append(" stroke-width=\"").appendNumber(1.5 * s).append("\" d=\"")
-        appendPath(scene.outline, closed = true)
+        for (loop in scene.outlines) appendPath(loop, closed = true)
         append("\"/>\n")
 
         if (scene.attribution != null) {

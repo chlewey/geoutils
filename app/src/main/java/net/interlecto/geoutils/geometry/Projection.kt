@@ -25,8 +25,8 @@ interface Projection {
      */
     fun inverse(x: Double, y: Double, out: DoubleArray): Boolean
 
-    /** Closed boundary of the map, in projection units. */
-    fun outline(): List<Vec2>
+    /** Closed boundary of the map, in projection units: one loop, or several for maps in parts. */
+    fun outline(): List<List<Vec2>>
 
     /**
      * Projects a polyline, following great circles between its vertices.

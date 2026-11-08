@@ -30,10 +30,11 @@ private const val MAX_ZOOM = 16f
 /**
  * Shows a [MapScene] fitted to the available space, with pinch zoom, drag
  * and double-tap to reset. Zooming scales the rendered image; it doesn't
- * re-render the map.
+ * re-render the map. With [fitWidth] the map fills the width and may run
+ * past the top and bottom (pan to see them); otherwise it fits whole.
  */
 @Composable
-fun MapViewer(scene: MapScene?, modifier: Modifier = Modifier) {
+fun MapViewer(scene: MapScene?, modifier: Modifier = Modifier, fitWidth: Boolean = false) {
     // Offset of the scene center from the view center, in screen pixels.
     // Both reset when the map's shape changes (another projection).
     val shape = scene?.let { it.width to it.height }
@@ -63,7 +64,8 @@ fun MapViewer(scene: MapScene?, modifier: Modifier = Modifier) {
     ) {
         Canvas(Modifier.fillMaxSize()) {
             if (scene == null) return@Canvas
-            val fit = min(size.width / scene.width, size.height / scene.height)
+            val widthFit = size.width / scene.width
+            val fit = if (fitWidth) widthFit else min(widthFit, size.height / scene.height)
             val k = fit * zoom
             withTransform({
                 translate(size.width / 2 + offset.x, size.height / 2 + offset.y)

@@ -5,6 +5,10 @@ milestone should leave the app shippable. Where a later milestone affects
 early design choices, the MVP notes say so, so the MVP doesn't need to be
 rewritten later.
 
+**Current state (2026-11-07):** milestones 0 to 3 are done (v0.3, merged into
+`main`); milestone 4 is next. The landing page at <https://geoutils.ilecto.app>
+(`site/`) shows the same plan in short.
+
 Conventions used throughout:
 
 - **Sphere model.** The Earth is a perfect sphere (radius 6 371 km) until the

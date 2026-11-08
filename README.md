@@ -72,23 +72,32 @@ Base package: `net.interlecto.geoutils`
 ```
 net/interlecto/geoutils/
 ├── data/       Room database (entities, DAOs), JSON parsing, repositories
-├── domain/     domain objects (models)
+├── domain/     domain objects (models) and scene rendering (SVG, raster)
 ├── geometry/   project-specific math: spherical geometry, projections
-├── ui/         fragments, screens and other interface elements
+├── ui/         Compose screens and other interface elements
 └── shared/     other extension libraries and helpers
 ```
 
 ## Status
 
-Milestones 1 to 3 are implemented. Open the bundled Blue Marble or your own
-equirectangular image and overlay a KML file. Project them in any of 14
-projections (orthographic, azimuthal, cylindrical and pseudocylindrical),
-aimed at any center and azimuth, including oblique and transverse aspects,
-or with the equator through two chosen points. Draw great-circle and rhumb
-routes with their distances. Zoom and pan, and save or share the result as
-SVG or PNG. See [ROADMAP.md](ROADMAP.md) for what's next.
+Milestones 1 to 3 are done (v0.3). Open the bundled Blue Marble or your own
+equirectangular image and overlay a KML file. Project them in any of 26
+projections in six families (hemispheric, azimuthal, cylindrical,
+pseudocylindrical, conic and two hemispheres), aimed at any center and
+azimuth, including oblique and transverse aspects, or with the equator
+through two chosen points. Draw great-circle and rhumb routes with their
+distances, range rings, bearing rays, the area within a radius, and the
+tropics and polar circles. Zoom and pan, and save or share the result as SVG
+or PNG. Next is milestone 4 (base map library, export options, bundled
+continents overlay and places); see [ROADMAP.md](ROADMAP.md).
 
 To add a projection, see [docs/ADDING_A_PROJECTION.md](docs/ADDING_A_PROJECTION.md).
+
+## Website
+
+The landing page at <https://geoutils.ilecto.app> lives in [`site/`](site/README.md):
+a static page served by a Cloudflare Worker, with map images rendered by the
+app's own projection engine.
 
 ## Building
 

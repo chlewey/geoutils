@@ -6,7 +6,7 @@
   <title>Geo-Utils</title>
   <meta name="description" content="Geo-Utils is an Android app for making maps in many projections: reproject equirectangular base maps, draw KML on top, aim the map anywhere and export SVG or PNG.">
   <meta property="og:title" content="Geo-Utils — maps in any projection">
-  <meta property="og:description" content="Reproject base maps and KML into 14 projections, aim them anywhere, and export SVG or PNG. An Android app, in development.">
+  <meta property="og:description" content="Reproject base maps and KML into 26 projections, aim them anywhere, and export SVG or PNG. An Android app, in development.">
   <meta property="og:image" content="https://geoutils.ilecto.app/img/og.jpg">
   <meta property="og:url" content="https://geoutils.ilecto.app/">
   <meta name="twitter:card" content="summary_large_image">
@@ -179,7 +179,7 @@
         <div>
           <span class="badge"><span class="dot"></span><span data-i18n="hero.badge">Android · in development · v0.3</span></span>
           <h1 data-i18n-html="hero.title">The whole world, in <em>any projection</em>.</h1>
-          <p class="lede" data-i18n="hero.lede">Geo-Utils reprojects equirectangular base maps and KML files into 14 map projections. Aim the map at any point, tilt it into oblique aspects, measure routes, and export the result as SVG or PNG.</p>
+          <p class="lede" data-i18n="hero.lede">Geo-Utils reprojects equirectangular base maps and KML files into 26 map projections, from globes and conics to two-hemisphere maps. Aim the map at any point, tilt it into oblique aspects, measure routes and distances, and export the result as SVG or PNG.</p>
           <div class="cta">
             <a class="btn primary" href="https://github.com/chlewey/geoutils">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.6 18.3 5 18.3 5c.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5Z"/></svg>
@@ -218,8 +218,8 @@
           </div>
           <div class="feature">
             <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 17c4-10 12-10 16 0"/><circle cx="4" cy="17" r="1.5"/><circle cx="20" cy="17" r="1.5"/></svg></div>
-            <h3 data-i18n="f4.t">Measure routes</h3>
-            <p data-i18n="f4.d">Great-circle and rhumb-line paths between two points, with distance and initial bearing, drawn right on the map.</p>
+            <h3 data-i18n="f4.t">Measure the sphere</h3>
+            <p data-i18n="f4.d">Great-circle and rhumb-line routes with distance and bearing, range rings, bearing rays, the area within a radius, and the tropics and polar circles.</p>
           </div>
           <div class="feature">
             <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg></div>
@@ -237,7 +237,7 @@
 
     <section id="projections" class="alt">
       <div class="wrap">
-        <div class="eyebrow" data-i18n="proj.eyebrow">14 projections</div>
+        <div class="eyebrow" data-i18n="proj.eyebrow">26 projections</div>
         <h2 data-i18n="proj.title">Rendered by the app itself</h2>
         <p class="sub" data-i18n="proj.sub">Every image on this page was produced by Geo-Utils' own projection engine from the Blue Marble base map.</p>
         <div class="gallery">
@@ -269,11 +269,22 @@
             <div class="pic"><img src="/img/sinusoidal.svg" alt="Sinusoidal projection" loading="lazy" width="1200" height="600"></div>
             <figcaption class="cap"><b data-i18n="cap.sin.t">Sinusoidal</b><span data-i18n="cap.sin">True scale along every parallel</span></figcaption>
           </figure>
+          <figure class="card w3" style="margin:0">
+            <div class="pic"><img src="/img/albers.svg" alt="Albers equal-area conic projection of the whole world" loading="lazy" width="1200" height="701"></div>
+            <figcaption class="cap"><b data-i18n="cap.albers.t">Albers equal-area conic</b><span data-i18n="cap.albers">The world on a cone, with the tropics and polar circles</span></figcaption>
+          </figure>
+          <figure class="card w3" style="margin:0">
+            <div class="pic"><img src="/img/two-hemispheres.svg" alt="Orthographic projection in two hemispheres, split at 30° W" loading="lazy" width="1200" height="600"></div>
+            <figcaption class="cap"><b data-i18n="cap.twohemi.t">Two hemispheres</b><span data-i18n="cap.twohemi">Orthographic, split along 30° W and 150° E</span></figcaption>
+          </figure>
         </div>
         <div class="families">
-          <div class="family"><b data-i18n="fam.az">Azimuthal</b><p data-i18n="fam.az.d">Orthographic, azimuthal equidistant, Lambert azimuthal equal-area.</p></div>
+          <div class="family"><b data-i18n="fam.hemi">Hemispheric</b><p data-i18n="fam.hemi.d">Orthographic, Nicolosi globular, and azimuthal equidistant, Lambert and Mollweide limited to one hemisphere.</p></div>
+          <div class="family"><b data-i18n="fam.az">Azimuthal</b><p data-i18n="fam.az.d">Azimuthal equidistant and Lambert azimuthal equal-area, with one-tap polar aspects.</p></div>
           <div class="family"><b data-i18n="fam.cyl">Cylindrical</b><p data-i18n="fam.cyl.d">Equirectangular, Mercator, Lambert, Behrmann, Hobo–Dyer, Gall–Peters, central cylindrical.</p></div>
           <div class="family"><b data-i18n="fam.pseudo">Pseudocylindrical</b><p data-i18n="fam.pseudo.d">Sinusoidal, Mollweide, Equal Earth, Goode homolosine.</p></div>
+          <div class="family"><b data-i18n="fam.conic">Conic</b><p data-i18n="fam.conic.d">Albers equal-area, Lambert conformal and equidistant conic, with two standard parallels.</p></div>
+          <div class="family"><b data-i18n="fam.two">Two hemispheres</b><p data-i18n="fam.two.d">Any hemispheric map on two touching disks, split along a meridian or as north and south.</p></div>
         </div>
       </div>
     </section>
@@ -299,10 +310,12 @@
         <ol class="roadmap">
           <li><span class="v">v0.1</span><span class="t"><b data-i18n="m1.t">Orthographic MVP</b><span data-i18n="m1.d">Base map + KML on a globe, SVG and PNG export</span></span><span class="pill done" data-i18n="st.done">done</span></li>
           <li><span class="v">v0.2</span><span class="t"><b data-i18n="m2.t">More projections</b><span data-i18n="m2.d">14 projections with oblique and transverse aspects</span></span><span class="pill done" data-i18n="st.done">done</span></li>
-          <li><span class="v">v0.3</span><span class="t"><b data-i18n="m3.t">Extensible projections</b><span data-i18n="m3.d">Projection registry, geodesy tools; next: conic and hemispheric maps</span></span><span class="pill now" data-i18n="st.now">in progress</span></li>
-          <li><span class="v">v0.4</span><span class="t"><b data-i18n="m4.t">Base map library</b><span data-i18n="m4.d">Manage base maps, saved configurations, places, export options</span></span><span class="pill" data-i18n="st.next">planned</span></li>
+          <li><span class="v">v0.3</span><span class="t"><b data-i18n="m3.t">Extensible projections</b><span data-i18n="m3.d">Projection registry, conic, hemispheric and two-hemisphere maps, geodesy tools</span></span><span class="pill done" data-i18n="st.done">done</span></li>
+          <li><span class="v">v0.4</span><span class="t"><b data-i18n="m4.t">Base map library</b><span data-i18n="m4.d">Manage base maps, saved configurations, places, export options</span></span><span class="pill now" data-i18n="st.up">up next</span></li>
           <li><span class="v">v0.5</span><span class="t"><b data-i18n="m5.t">Downloadable base maps</b><span data-i18n="m5.d">A catalog of openly licensed maps, including night lights and planets</span></span><span class="pill" data-i18n="st.next">planned</span></li>
           <li><span class="v">v1.0</span><span class="t"><b data-i18n="m6.t">Interactive maps</b><span data-i18n="m6.d">Drag to spin the globe, GPU reprojection, live re-rendering</span></span><span class="pill" data-i18n="st.next">planned</span></li>
+          <li><span class="v">v1.1</span><span class="t"><b data-i18n="m7.t">Thematic maps</b><span data-i18n="m7.d">Join CSV data to KML areas, choropleths and labels</span></span><span class="pill" data-i18n="st.next">planned</span></li>
+          <li><span class="v">v1.2</span><span class="t"><b data-i18n="m8.t">KML topology editing</b><span data-i18n="m8.d">Split and merge areas along shared borders</span></span><span class="pill" data-i18n="st.next">planned</span></li>
         </ol>
       </div>
     </section>
@@ -321,7 +334,7 @@
       "nav.features": "Funciones", "nav.projections": "Proyecciones", "nav.roadmap": "Hoja de ruta",
       "hero.badge": "Android · en desarrollo · v0.3",
       "hero.title": "El mundo entero, en <em>cualquier proyección</em>.",
-      "hero.lede": "Geo-Utils reproyecta mapas base equirrectangulares y archivos KML en 14 proyecciones cartográficas. Centra el mapa en cualquier punto, inclínalo en aspectos oblicuos, mide rutas y exporta el resultado en SVG o PNG.",
+      "hero.lede": "Geo-Utils reproyecta mapas base equirrectangulares y archivos KML en 26 proyecciones cartográficas, desde globos y cónicas hasta mapas en dos hemisferios. Centra el mapa en cualquier punto, inclínalo en aspectos oblicuos, mide rutas y distancias y exporta el resultado en SVG o PNG.",
       "hero.source": "Código en GitHub", "hero.see": "Ver las proyecciones",
       "hero.note": "Aún no está en Google Play: compílala desde el código con Android Studio.",
       "features.eyebrow": "Qué hace", "features.title": "Un taller de mapas en el bolsillo",
@@ -329,19 +342,24 @@
       "f1.t": "Reproyecta mapas base", "f1.d": "Blue Marble de la NASA incluido, o abre tu propia imagen equirrectangular PNG, JPEG o WebP. Cada píxel de salida se proyecta a la inversa y se muestrea.",
       "f2.t": "Dibuja KML encima", "f2.d": "Puntos, líneas y polígonos con sus estilos, densificados por círculos máximos y recortados limpiamente en horizontes y costuras.",
       "f3.t": "Apúntalo a cualquier lugar", "f3.d": "Fija cualquier centro y acimut, o define el «ecuador» del mapa con dos puntos. Convierte la Mercator en Mercator transversa con un toque.",
-      "f4.t": "Mide rutas", "f4.d": "Ortodrómicas y loxodrómicas entre dos puntos, con distancia y rumbo inicial, dibujadas sobre el mapa.",
+      "f4.t": "Mide la esfera", "f4.d": "Rutas ortodrómicas y loxodrómicas con distancia y rumbo, anillos de distancia, rayos de rumbo, el área dentro de un radio, y los trópicos y círculos polares.",
       "f5.t": "Exporta SVG o PNG", "f5.d": "SVG vectorial con la imagen incrustada —se abre en navegadores e Inkscape— o un PNG plano. Guárdalo o compártelo al instante.",
       "f6.t": "Mapas interrumpidos, bien hechos", "f6.d": "La homolosena de Goode mantiene sus lóbulos ligados a los continentes, con Groenlandia dividida, entera o ambas.",
-      "proj.eyebrow": "14 proyecciones", "proj.title": "Generadas por la propia app",
+      "proj.eyebrow": "26 proyecciones", "proj.title": "Generadas por la propia app",
       "proj.sub": "Todas las imágenes de esta página las produjo el motor de proyecciones de Geo-Utils a partir del mapa base Blue Marble.",
       "cap.mollweide": "Equivalente, el mundo entero en una elipse", "cap.goode": "Equivalente interrumpida, con Groenlandia entera",
       "cap.aeq.t": "Azimutal equidistante", "cap.aeq": "Centrada en el Polo Norte",
       "cap.laea.t": "Azimutal equivalente de Lambert", "cap.laea": "Oblicua, centrada en Asia",
       "cap.ortho.t": "Ortográfica", "cap.ortho": "El globo visto desde el espacio",
-      "cap.ee": "Mapamundi equivalente moderno", "cap.sin.t": "Sinusoidal", "cap.sin": "Escala verdadera en todos los paralelos",
-      "fam.az": "Azimutales", "fam.az.d": "Ortográfica, azimutal equidistante, azimutal equivalente de Lambert.",
+      "cap.ee": "Mapamundi equivalente moderno",
+      "cap.albers.t": "Cónica equivalente de Albers", "cap.albers": "El mundo sobre un cono, con los trópicos y los círculos polares",
+      "cap.twohemi.t": "Dos hemisferios", "cap.twohemi": "Ortográfica, dividida por los 30° O y 150° E", "cap.sin.t": "Sinusoidal", "cap.sin": "Escala verdadera en todos los paralelos",
+      "fam.hemi": "Hemisféricas", "fam.hemi.d": "Ortográfica, globular de Nicolosi, y azimutal equidistante, de Lambert y de Mollweide limitadas a un hemisferio.",
+      "fam.az": "Azimutales", "fam.az.d": "Azimutal equidistante y azimutal equivalente de Lambert, con aspectos polares en un toque.",
       "fam.cyl": "Cilíndricas", "fam.cyl.d": "Equirrectangular, Mercator, Lambert, Behrmann, Hobo–Dyer, Gall–Peters, cilíndrica central.",
       "fam.pseudo": "Pseudocilíndricas", "fam.pseudo.d": "Sinusoidal, Mollweide, Equal Earth, homolosena de Goode.",
+      "fam.conic": "Cónicas", "fam.conic.d": "Equivalente de Albers, conforme de Lambert y equidistante, con dos paralelos estándar.",
+      "fam.two": "Dos hemisferios", "fam.two.d": "Cualquier mapa hemisférico en dos discos que se tocan, divididos por un meridiano o en norte y sur.",
       "how.eyebrow": "Cómo funciona", "how.title": "Tres pasos hasta un mapa", "how.sub": "Sin cuentas ni servidores. Tus archivos se quedan en tu teléfono.",
       "s1.t": "Elige tus capas", "s1.d": "Usa el Blue Marble incluido o tu propia imagen y, si quieres, abre un archivo KML.",
       "s2.t": "Ajusta la proyección", "s2.d": "Elige una proyección, fija su centro, acimut y parámetros, y pellizca para explorar.",
@@ -349,11 +367,13 @@
       "rm.eyebrow": "Hoja de ruta", "rm.title": "Hacia dónde va", "rm.sub": "Cada hito deja la app usable. El plan completo está en",
       "m1.t": "MVP ortográfico", "m1.d": "Mapa base + KML sobre un globo, exportación SVG y PNG",
       "m2.t": "Más proyecciones", "m2.d": "14 proyecciones con aspectos oblicuos y transversos",
-      "m3.t": "Proyecciones extensibles", "m3.d": "Registro de proyecciones, herramientas geodésicas; siguiente: cónicas y hemisféricas",
+      "m3.t": "Proyecciones extensibles", "m3.d": "Registro de proyecciones, mapas cónicos, hemisféricos y en dos hemisferios, herramientas geodésicas",
       "m4.t": "Biblioteca de mapas base", "m4.d": "Gestión de mapas base, configuraciones guardadas, lugares, opciones de exportación",
       "m5.t": "Mapas base descargables", "m5.d": "Un catálogo de mapas con licencia abierta, con luces nocturnas y planetas",
       "m6.t": "Mapas interactivos", "m6.d": "Arrastra para girar el globo, reproyección en GPU, renderizado en vivo",
-      "st.done": "hecho", "st.now": "en curso", "st.next": "previsto",
+      "m7.t": "Mapas temáticos", "m7.d": "Une datos CSV a áreas KML, coropletas y etiquetas",
+      "m8.t": "Edición de topología KML", "m8.d": "Divide y une áreas a lo largo de fronteras compartidas",
+      "st.done": "hecho", "st.now": "en curso", "st.up": "siguiente", "st.next": "previsto",
       "foot.attr": "Imágenes del mapa base: NASA Earth Observatory, Blue Marble.",
       "foot.part": "Un proyecto de"
     };

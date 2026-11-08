@@ -1,0 +1,12 @@
+{
+  // Landing page for Geo-Utils, served as static assets by a Cloudflare Worker.
+  "name": "geoutils-site",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "404-page"
+  },
+  "routes": [
+    { "pattern": "geoutils.ilecto.app", "custom_domain": true }
+  ]
+}

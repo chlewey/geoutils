@@ -34,3 +34,17 @@ Gradle wrapper, Kotlin DSL, version catalog.
 - New projections are registered in `ProjectionCatalog`; `ProjectionsTest` round-trips every catalog entry automatically.
 - The Earth is a sphere (radius 6 371 km); coordinates are (lon, lat) in degrees, as in KML.
 - Don't bundle third-party data of unknown license; bundled data must be public domain or openly licensed, with attribution.
+
+## Features from earlier repos
+
+The owner's older repos [globe-prj](https://github.com/chlewey/globe-prj)
+(Python), [kml2svg](https://github.com/chlewey/kml2svg) (PHP) and
+[maps](https://github.com/chlewey/maps) (PHP) are their own work. `ROADMAP.md`
+marks the features to port from them with *(from …)*. When working a milestone,
+port its *(from …)* items, reimplemented in Kotlin rather than copied.
+
+- `kml2svg/Continents.kml` is the owner's own work, released as CC0, and may be
+  bundled under this project's license (stated 2026-10-24).
+- Don't bundle the third-party data in those repos: the GADM Colombia boundaries
+  in `maps` and the other country KMLs of unknown origin.
+- The fixmap KML topology editor is low priority and comes last (Milestone 8).

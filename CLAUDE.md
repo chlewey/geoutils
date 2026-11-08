@@ -2,6 +2,8 @@
 
 Geo-Utils: an Android app for working with KML files and other geographic data and for making maps in different projections. It reprojects an equirectangular bitmap base map (e.g. NASA Blue Marble) and turns KML geometry into SVG. It is a single-activity Jetpack Compose app with a splash screen. See `README.md` and `ROADMAP.md`.
 
+Rules shared by all Interlecto projects (branches, debug keystore, deployment, Google Play, visual identity, how to continue from another machine or account) are in the hub's [CLAUDE.md](https://github.com/Interlecto/ilecto/blob/master/CLAUDE.md). Where they differ, this file wins.
+
 ## Layout
 
 - `app/` — the only module (Kotlin under `app/src/main/java/net`; bundled data in `app/src/main/assets`; unit tests in `app/src/test`).

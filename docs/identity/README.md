@@ -48,7 +48,16 @@ The exact stops are in `globe.svg`; the app and the site copy them.
   `favicon.ico` (16, 32, 48), `icon-192.png` and `icon-512.png` are rasters
   of it; `icon-maskable-512.png` is full-bleed with the globe at 60% (inside
   the maskable safe zone); `apple-touch-icon.png` (180) is full-bleed with the
-  globe at 90%. `site.webmanifest` lists them.
+  globe at 90%. `site.webmanifest` lists them. `mask-icon.svg` is the
+  one-color globe (same shape as the monochrome layer) for Safari pinned tabs,
+  tinted `#0B3D66`.
+- **Social card** (`site/public/img/og.jpg`, 1200×630, for `og:image` and
+  `twitter:image`): on `#000814`, the favicon at 112 px, "Geo-Utils" in bold,
+  the tagline "Maps in any projection", a line of features and the domain, in
+  the site's text colors (`#EAF2F8`, `#9FB3C8`, accent `#7CC4FF`), beside the
+  Blue Marble orthographic globe that was the previous card. The text is set
+  in Segoe UI because Inter, the site's font, is not installed for
+  ImageMagick; switch to Inter when the card is redone.
 
 ## File and folder icons
 
@@ -71,3 +80,18 @@ magick f16.png f32.png f48.png favicon.ico
 For the full-bleed icons, wrap the `globe.svg` content in a square of
 `#0B3D66`: viewBox `-40 -40 200 200` puts the globe at 60%, and
 `-6.667 -6.667 133.333 133.333` puts it at 90% (the launcher's visible area).
+
+The social card, from `site/public/` (`globe.jpg` is the previous card, a
+1200×630 Blue Marble orthographic render with the globe centered):
+
+```
+magick -background none -density 1200 favicon.svg -resize 112x112 logo112.png
+magick -size 1200x630 xc:#000814 \
+  ( globe.jpg -crop 610x610+295+10 +repage -resize 560x560 ) -geometry +600+35 -composite \
+  logo112.png -geometry +72+150 -composite \
+  -font Segoe-UI-Bold -pointsize 92 -fill #EAF2F8 -annotate +68+370 "Geo-Utils" \
+  -font Segoe-UI -pointsize 40 -fill #EAF2F8 -annotate +72+436 "Maps in any projection" \
+  -font Segoe-UI -pointsize 26 -fill #9FB3C8 -annotate +73+490 "Android · 26 projections · KML → SVG / PNG" \
+  -font Segoe-UI -pointsize 24 -fill #7CC4FF -annotate +73+560 "geoutils.ilecto.app" \
+  -quality 86 -strip img/og.jpg
+```

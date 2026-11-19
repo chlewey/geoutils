@@ -4,6 +4,8 @@ Static landing page for Geo-Utils, served at https://geoutils.ilecto.app by a
 Cloudflare Worker with static assets (`wrangler.jsonc`, Worker `geoutils-site`).
 
 - `public/`: the site (`index.html`, English/Spanish toggle, `404.html`).
+- `public/favicon.*`, `icon-*.png`, `apple-touch-icon.png`, `site.webmanifest`:
+  the site icons, made from the globe in `docs/identity/` (see its README).
 - `public/img/`: map images rendered by the app's own projection engine
   (`SceneBuilder` + `SvgWriter`) from the bundled Blue Marble base map.
 

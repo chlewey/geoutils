@@ -10,6 +10,7 @@ Rules shared by all Interlecto projects (branches, debug keystore, deployment, G
   - `geometry/` — projections, clipping and geodesy; plain Kotlin with no Android imports, so it is unit-tested on the JVM.
   - `domain/render/` — `SceneBuilder` (projected scene), `SvgWriter`; `ui/` — Compose screens.
 - `docs/ADDING_A_PROJECTION.md` — how to add a projection (normal-aspect formulas, catalog entry, tests).
+- `docs/identity/` — the visual identity: the globe master (`globe.svg`), palette, where each icon is used and how the rasters are made.
 - `site/` — landing page for https://geoutils.ilecto.app (Cloudflare Worker with static assets; deploy with `npx wrangler deploy` from `site/`).
 - `keystore/` — signing material location; never commit real keystores or passwords.
 - `.github/` — CI: build, lint and unit tests on pushes to `main` and on pull requests.

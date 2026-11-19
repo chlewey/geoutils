@@ -327,13 +327,16 @@ Goal: keep and manage more than one base map.
 
 ### Visual identity and file management *(from geoutils-legacy)*
 
-- [ ] Import part of the legacy visual identity: decide which elements of its
-      globe artwork carry over, and keep the current launcher icon's
-      monochrome layer working.
+- [x] Import part of the legacy visual identity: the legacy globe, simplified,
+      is the new mark (`docs/identity/`). Launcher icon with the globe at 60%
+      on `@color/ocean`, a monochrome layer for themed icons, splash screen,
+      and the site's favicon, web icons and manifest, plus the Play store icon.
 - [ ] File-format and folder icons: the legacy set (geo, KML, SVG, unknown,
-      plus folder, geo folder and generic folder) for lists and pickers, in
-      this app's palette. Add an icon for map configurations/projects, which
-      legacy left as a TODO.
+      plus folder, geo folder and generic folder) for lists and pickers.
+      Imported unchanged into `res/drawable` (`ic_fileformat_*`,
+      `ic_foldertype*`, `ic_unknown_format`); still to do: use them in lists
+      and pickers, decide whether to move them to this app's palette, and add
+      an icon for map configurations/projects, which legacy left as a TODO.
 - [ ] Format badges for bitmaps: the PNG, JPEG and TIFF icons are labels
       only, meant to be overlaid on the image's thumbnail. Use them on base map
       and image thumbnails.

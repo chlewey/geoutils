@@ -470,6 +470,21 @@ maps *(from kml2svg `fixmap.php`; low priority)*.
 
 ## Later / ideas
 
+- **Combined base maps** (owner's wishlist): blend two equirectangular base
+  maps through a mask before reprojecting, for example a day map (Blue Marble)
+  and a night map (Black Marble, milestone 5) split along the day–night
+  terminator.
+  - Set the transition either by coordinates (the subsolar point, latitude and
+    longitude) or by date and time (UTC, or local time with a time zone), from
+    which the subsolar point is computed (solar declination and the equation
+    of time).
+  - A twilight band instead of a hard edge: blend over a chosen solar
+    altitude range (civil 6°, nautical 12°, astronomical 18°).
+  - Optionally draw the terminator, and the twilight limits, as an overlay
+    line: the circle 90° from the subsolar point, which the geodesy tools can
+    already draw as a range circle.
+  - Other masks with the same mechanism: a KML polygon (one map inside,
+    another outside), a hemisphere, or a land/sea mask.
 - Projected output combined as a raster (bitmap + KML burned into the image)
   in addition to SVG with an embedded bitmap.
 - Ellipsoidal Earth (WGS84) for projections where it matters (Mercator, transverse

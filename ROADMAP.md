@@ -24,6 +24,12 @@ Conventions used throughout:
   [maps](https://github.com/chlewey/maps) (PHP). They are reimplemented here
   in Kotlin, not copied. Third-party data in them (GADM boundaries, KMLs of
   unknown origin) is not bundled.
+- **geoutils-legacy.** [geoutils-legacy](https://github.com/chlewey/geoutils-legacy)
+  is an earlier Kotlin prototype of this app (Views and Fragments). Part of
+  its visual identity and its file-management ideas will be imported; those
+  items are marked *(from geoutils-legacy)*. Its vector drawables can be
+  brought over and adapted to this app's palette; its code is rewritten for
+  Compose, Hilt and the current package layout.
 
 ---
 
@@ -318,6 +324,28 @@ Goal: keep and manage more than one base map.
       configurations" (base map + overlays + projection + parameters).
 - [ ] Large-image handling: tiled or downsampled decoding so 8K–21K source images
       don't exhaust memory.
+
+### Visual identity and file management *(from geoutils-legacy)*
+
+- [ ] Import part of the legacy visual identity: decide which elements of its
+      globe artwork carry over, and keep the current launcher icon's
+      monochrome layer working.
+- [ ] File-format and folder icons: the legacy set (geo, KML, SVG, unknown,
+      plus folder, geo folder and generic folder) for lists and pickers, in
+      this app's palette. Add an icon for map configurations/projects, which
+      legacy left as a TODO.
+- [ ] Format badges for bitmaps: the PNG, JPEG and TIFF icons are labels
+      only, meant to be overlaid on the image's thumbnail. Use them on base map
+      and image thumbnails.
+- [ ] File browser and project gallery: a grid of the app's files and
+      projects with thumbnails and type icons.
+- [ ] File index in Room: track files known to the app and which projects use
+      them (legacy `non_project_files`, `project_files` and their cross-ref
+      table), with a migration from the current schema.
+- [ ] Project file: one file bundling a map configuration with its resources
+      and a thumbnail, so it can be shared and reopened (legacy `.gup`:
+      gzipped JSON with resources, thumbnail and a list of actions). Decide
+      whether to keep `.gup` or use a zip-based format, like KMZ.
 
 ### Export options
 

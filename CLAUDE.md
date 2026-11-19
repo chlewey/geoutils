@@ -50,3 +50,9 @@ port its *(from …)* items, reimplemented in Kotlin rather than copied.
 - Don't bundle the third-party data in those repos: the GADM Colombia boundaries
   in `maps` and the other country KMLs of unknown origin.
 - The fixmap KML topology editor is low priority and comes last (Milestone 8).
+- [geoutils-legacy](https://github.com/chlewey/geoutils-legacy) is an earlier
+  Kotlin prototype of this app. Part of its visual identity (icons) and its
+  file-management ideas (project gallery, file index, `.gup` project files)
+  will be imported; see the *(from geoutils-legacy)* items in `ROADMAP.md`.
+  Its PNG, JPEG and TIFF icons are badges overlaid on image thumbnails, not
+  full icons.

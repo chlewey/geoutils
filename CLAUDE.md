@@ -33,6 +33,7 @@ Gradle wrapper, Kotlin DSL, version catalog.
 
 - Keep the single-activity, Compose-only structure; add screens as composables, not new activities.
 - Roadmap work goes on `develop`; `main` gets it through pull requests. Mark items done in `ROADMAP.md` as they land.
+- General documentation (`README.md`, `ROADMAP.md`, `CLAUDE.md`, `docs/`) is synced to `main` right away: open the pull request and merge it as soon as the change is committed, rather than waiting for the next feature merge.
 - New projections are registered in `ProjectionCatalog`; `ProjectionsTest` round-trips every catalog entry automatically.
 - The Earth is a sphere (radius 6 371 km); coordinates are (lon, lat) in degrees, as in KML.
 - Don't bundle third-party data of unknown license; bundled data must be public domain or openly licensed, with attribution.

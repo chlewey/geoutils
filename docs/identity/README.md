@@ -5,10 +5,21 @@ The mark is the globe from [geoutils-legacy](https://github.com/chlewey/geoutils
 
 - `globe.svg`: the master. Ocean and land are two shapes with radial gradients;
   the legacy shading overlay (transparent to 50% black at the rim) is folded
-  into the gradient stops, and the coasts were simplified with a tolerance of
-  half a pixel at 120 px (13 outlines, 377 points). At 120×120 it matches the
-  legacy rendering in 97.6% of the pixels within ±16 levels per channel
-  (95.7% within ±8). `legacy-comparison.png` shows both side by side at 4×.
+  into the gradient stops. The coasts keep 380 of the 619 points of the
+  legacy outlines (12 outlines), coordinates to 0.1 unit: points were removed
+  one at a time, always the one whose removal changed the 120 px rendering
+  least, measured on the pixels rather than on the geometry. At 120×120 it
+  matches the legacy rendering in 98.2% of the pixels within ±16 levels per
+  channel (96.2% within ±8), against 97.6% for a Douglas–Peucker
+  simplification of the same size. `legacy-comparison.png` shows both side by
+  side at 4×.
+- Size versus fidelity: each coast point costs about 2.6 bytes of the
+  gzipped SVG (about 7.5 uncompressed) on top of about 450 bytes for the rest.
+  Coordinate precision matters more than the number of points: rounding to
+  half a pixel caps the match at about 96%, and to whole pixels at about 94%,
+  however many points are kept. Above about 1.65 KB gzipped the gains are
+  negligible. Visvalingam–Whyatt (removing the point with the smallest
+  triangle) ranks points almost the same way down to about 380 points.
 - `play-icon-512.png`: Google Play store icon (512×512, opaque, no rounding;
   Play applies its own mask).
 

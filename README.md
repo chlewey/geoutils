@@ -67,7 +67,7 @@ can:
 
 ## Project structure
 
-Base package: `aps.ilecto.geoutils`
+Base package: `aps.ilecto.geoutils` (also the Android `applicationId`)
 
 ```
 aps/ilecto/geoutils/

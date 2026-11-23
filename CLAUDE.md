@@ -13,6 +13,7 @@ Rules shared by all Interlecto projects (branches, debug keystore, deployment, G
 - `docs/identity/` — the visual identity: the globe master (`globe.svg`), palette, where each icon is used and how the rasters are made.
 - `site/` — landing page for https://geoutils.ilecto.app (Cloudflare Worker with static assets; deploy with `npx wrangler deploy` from `site/`).
 - `keystore/` — signing material location; never commit real keystores or passwords.
+- Package and `applicationId` are `aps.ilecto.geoutils` (renamed from `net.interlecto.geoutils` on 2026-11-22, before any release). Signing is independent of the ID: the committed debug keystore and the release key read from `keystore.properties` are unchanged.
 - `.github/` — CI: build, lint and unit tests on pushes to `main` and on pull requests.
 
 ## Build

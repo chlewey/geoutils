@@ -1,7 +1,7 @@
-package net.interlecto.geoutils.data
+package aps.ilecto.geoutils.data
 
-import net.interlecto.geoutils.data.image.RasterLoader
-import net.interlecto.geoutils.domain.model.BaseMap
+import aps.ilecto.geoutils.data.image.RasterLoader
+import aps.ilecto.geoutils.domain.model.BaseMap
 
 /** Base maps shipped in `assets/basemaps`, added to the library on startup. */
 object BundledBaseMaps {

@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.ui.theme
+package aps.ilecto.geoutils.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme

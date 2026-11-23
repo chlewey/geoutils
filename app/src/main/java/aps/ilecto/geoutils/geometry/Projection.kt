@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.geometry
+package aps.ilecto.geoutils.geometry
 
 /**
  * A map projection of the unit sphere onto the plane.

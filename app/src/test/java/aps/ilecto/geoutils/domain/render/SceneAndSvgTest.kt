@@ -1,11 +1,11 @@
-package net.interlecto.geoutils.domain.render
+package aps.ilecto.geoutils.domain.render
 
-import net.interlecto.geoutils.domain.model.Geometry
-import net.interlecto.geoutils.domain.model.KmlDocument
-import net.interlecto.geoutils.domain.model.Placemark
-import net.interlecto.geoutils.domain.model.SceneShape
-import net.interlecto.geoutils.geometry.GeoPoint
-import net.interlecto.geoutils.geometry.Orthographic
+import aps.ilecto.geoutils.domain.model.Geometry
+import aps.ilecto.geoutils.domain.model.KmlDocument
+import aps.ilecto.geoutils.domain.model.Placemark
+import aps.ilecto.geoutils.domain.model.SceneShape
+import aps.ilecto.geoutils.geometry.GeoPoint
+import aps.ilecto.geoutils.geometry.Orthographic
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

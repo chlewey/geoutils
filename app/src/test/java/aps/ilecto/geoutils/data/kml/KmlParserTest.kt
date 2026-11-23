@@ -1,7 +1,7 @@
-package net.interlecto.geoutils.data.kml
+package aps.ilecto.geoutils.data.kml
 
-import net.interlecto.geoutils.domain.model.FeatureStyle
-import net.interlecto.geoutils.domain.model.Geometry
+import aps.ilecto.geoutils.domain.model.FeatureStyle
+import aps.ilecto.geoutils.domain.model.Geometry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

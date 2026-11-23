@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.ui.map
+package aps.ilecto.geoutils.ui.map
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
@@ -46,15 +46,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import net.interlecto.geoutils.R
-import net.interlecto.geoutils.geometry.AspectControls
-import net.interlecto.geoutils.geometry.GeoPoint
-import net.interlecto.geoutils.geometry.Geodesy
-import net.interlecto.geoutils.geometry.ProjectionCatalog
-import net.interlecto.geoutils.geometry.ProjectionFamily
-import net.interlecto.geoutils.geometry.ProjectionParam
-import net.interlecto.geoutils.geometry.ProjectionType
-import net.interlecto.geoutils.geometry.Sphere
+import aps.ilecto.geoutils.R
+import aps.ilecto.geoutils.geometry.AspectControls
+import aps.ilecto.geoutils.geometry.GeoPoint
+import aps.ilecto.geoutils.geometry.Geodesy
+import aps.ilecto.geoutils.geometry.ProjectionCatalog
+import aps.ilecto.geoutils.geometry.ProjectionFamily
+import aps.ilecto.geoutils.geometry.ProjectionParam
+import aps.ilecto.geoutils.geometry.ProjectionType
+import aps.ilecto.geoutils.geometry.Sphere
 import java.text.NumberFormat
 
 private enum class ControlTab(@StringRes val label: Int) {

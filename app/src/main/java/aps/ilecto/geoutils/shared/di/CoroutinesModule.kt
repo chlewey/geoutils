@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.shared.di
+package aps.ilecto.geoutils.shared.di
 
 import dagger.Module
 import dagger.Provides

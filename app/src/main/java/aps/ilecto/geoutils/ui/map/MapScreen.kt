@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.ui.map
+package aps.ilecto.geoutils.ui.map
 
 import android.Manifest
 import android.content.Intent
@@ -40,9 +40,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import net.interlecto.geoutils.R
-import net.interlecto.geoutils.data.export.MapExporter.Format
-import net.interlecto.geoutils.geometry.ProjectionFamily
+import aps.ilecto.geoutils.R
+import aps.ilecto.geoutils.data.export.MapExporter.Format
+import aps.ilecto.geoutils.geometry.ProjectionFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

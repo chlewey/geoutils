@@ -1,12 +1,12 @@
-package net.interlecto.geoutils.data.repository
+package aps.ilecto.geoutils.data.repository
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import net.interlecto.geoutils.data.BundledBaseMaps
-import net.interlecto.geoutils.data.local.BaseMapDao
-import net.interlecto.geoutils.data.local.toDomain
-import net.interlecto.geoutils.data.local.toEntity
-import net.interlecto.geoutils.domain.model.BaseMap
+import aps.ilecto.geoutils.data.BundledBaseMaps
+import aps.ilecto.geoutils.data.local.BaseMapDao
+import aps.ilecto.geoutils.data.local.toDomain
+import aps.ilecto.geoutils.data.local.toEntity
+import aps.ilecto.geoutils.domain.model.BaseMap
 import javax.inject.Inject
 import javax.inject.Singleton
 

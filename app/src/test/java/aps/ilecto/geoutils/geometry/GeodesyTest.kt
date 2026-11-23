@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.geometry
+package aps.ilecto.geoutils.geometry
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

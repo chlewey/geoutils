@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.data.di
+package aps.ilecto.geoutils.data.di
 
 import android.content.Context
 import androidx.room.Room
@@ -7,8 +7,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import net.interlecto.geoutils.data.local.BaseMapDao
-import net.interlecto.geoutils.data.local.GeoUtilsDatabase
+import aps.ilecto.geoutils.data.local.BaseMapDao
+import aps.ilecto.geoutils.data.local.GeoUtilsDatabase
 import javax.inject.Singleton
 
 @Module

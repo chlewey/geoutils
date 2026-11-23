@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.domain.model
+package aps.ilecto.geoutils.domain.model
 
 /**
  * An equirectangular bitmap covering the whole sphere (360° × 180°), used as

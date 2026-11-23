@@ -1,11 +1,11 @@
-package net.interlecto.geoutils.ui.navigation
+package aps.ilecto.geoutils.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.serialization.Serializable
-import net.interlecto.geoutils.ui.map.MapScreen
+import aps.ilecto.geoutils.ui.map.MapScreen
 
 @Serializable
 data object MapRoute

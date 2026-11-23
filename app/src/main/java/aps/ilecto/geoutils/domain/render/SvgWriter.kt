@@ -1,8 +1,8 @@
-package net.interlecto.geoutils.domain.render
+package aps.ilecto.geoutils.domain.render
 
-import net.interlecto.geoutils.domain.model.MapScene
-import net.interlecto.geoutils.domain.model.SceneShape
-import net.interlecto.geoutils.geometry.Vec2
+import aps.ilecto.geoutils.domain.model.MapScene
+import aps.ilecto.geoutils.domain.model.SceneShape
+import aps.ilecto.geoutils.geometry.Vec2
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToLong

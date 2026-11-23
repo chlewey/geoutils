@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.geometry
+package aps.ilecto.geoutils.geometry
 
 /** Meridians and parallels every [stepDeg] degrees, as polylines. */
 object Graticule {

@@ -45,7 +45,7 @@ Goal: an empty but well-structured app that later milestones can build on.
 - [x] Hilt wired up (application class, database and coroutine modules).
 - [x] Room wired up: a `base_maps` table, schemas exported to `app/schemas`,
       and no destructive migrations.
-- [x] Package layout under `net.interlecto.geoutils` (see the README):
+- [x] Package layout under `aps.ilecto.geoutils` (see the README):
   - `data`: Room, JSON, KML parsing, repositories.
   - `domain`: domain objects.
   - `geometry`: spherical math, projections, raster reprojection, SVG writer.

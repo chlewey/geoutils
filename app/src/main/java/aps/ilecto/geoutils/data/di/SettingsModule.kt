@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.data.di
+package aps.ilecto.geoutils.data.di
 
 import android.content.Context
 import androidx.datastore.core.DataStore

@@ -14,11 +14,11 @@ val releaseKeystore: Properties? = rootProject.file("keystore.properties")
     ?.let { file -> Properties().apply { file.inputStream().use { load(it) } } }
 
 android {
-    namespace = "net.interlecto.geoutils"
+    namespace = "aps.ilecto.geoutils"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "net.interlecto.geoutils"
+        applicationId = "aps.ilecto.geoutils"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.data.local
+package aps.ilecto.geoutils.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase

@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.data
+package aps.ilecto.geoutils.data
 
 import android.content.Context
 import android.net.Uri

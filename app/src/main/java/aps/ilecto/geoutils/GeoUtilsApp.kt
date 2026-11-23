@@ -1,4 +1,4 @@
-package net.interlecto.geoutils
+package aps.ilecto.geoutils
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp

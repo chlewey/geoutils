@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.data.location
+package aps.ilecto.geoutils.data.location
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -12,7 +12,7 @@ import androidx.core.location.LocationManagerCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
-import net.interlecto.geoutils.geometry.GeoPoint
+import aps.ilecto.geoutils.geometry.GeoPoint
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume

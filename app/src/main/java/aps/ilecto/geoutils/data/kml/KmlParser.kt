@@ -1,10 +1,10 @@
-package net.interlecto.geoutils.data.kml
+package aps.ilecto.geoutils.data.kml
 
-import net.interlecto.geoutils.domain.model.FeatureStyle
-import net.interlecto.geoutils.domain.model.Geometry
-import net.interlecto.geoutils.domain.model.KmlDocument
-import net.interlecto.geoutils.domain.model.Placemark
-import net.interlecto.geoutils.geometry.GeoPoint
+import aps.ilecto.geoutils.domain.model.FeatureStyle
+import aps.ilecto.geoutils.domain.model.Geometry
+import aps.ilecto.geoutils.domain.model.KmlDocument
+import aps.ilecto.geoutils.domain.model.Placemark
+import aps.ilecto.geoutils.geometry.GeoPoint
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 import java.io.InputStream

@@ -1,13 +1,13 @@
-package net.interlecto.geoutils.data.kml
+package aps.ilecto.geoutils.data.kml
 
 import android.content.Context
 import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
-import net.interlecto.geoutils.data.displayName
-import net.interlecto.geoutils.domain.model.KmlDocument
-import net.interlecto.geoutils.shared.di.IoDispatcher
+import aps.ilecto.geoutils.data.displayName
+import aps.ilecto.geoutils.domain.model.KmlDocument
+import aps.ilecto.geoutils.shared.di.IoDispatcher
 import java.io.FileNotFoundException
 import javax.inject.Inject
 import javax.inject.Singleton

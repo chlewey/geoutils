@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.geometry
+package aps.ilecto.geoutils.geometry
 
 /**
  * A point on the sphere in degrees, in (longitude, latitude) order as in KML.

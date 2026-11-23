@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.geometry
+package aps.ilecto.geoutils.geometry
 
 import java.util.stream.IntStream
 import kotlin.math.floor

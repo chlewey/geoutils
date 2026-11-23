@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.geometry
+package aps.ilecto.geoutils.geometry
 
 /** Spherical Earth model used until ellipsoid support is added. */
 object Sphere {

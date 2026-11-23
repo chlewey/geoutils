@@ -1,6 +1,6 @@
 # Adding a projection
 
-Projections live in `app/src/main/java/net/interlecto/geoutils/geometry/`,
+Projections live in `app/src/main/java/aps/ilecto/geoutils/geometry/`,
 which is plain Kotlin with no Android dependencies, so everything here can
 be unit-tested on the JVM.
 

@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.data.image
+package aps.ilecto.geoutils.data.image
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -8,8 +8,8 @@ import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
-import net.interlecto.geoutils.geometry.RasterImage
-import net.interlecto.geoutils.shared.di.IoDispatcher
+import aps.ilecto.geoutils.geometry.RasterImage
+import aps.ilecto.geoutils.shared.di.IoDispatcher
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream

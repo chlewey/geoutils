@@ -1,9 +1,9 @@
-package net.interlecto.geoutils.data.local
+package aps.ilecto.geoutils.data.local
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import net.interlecto.geoutils.domain.model.BaseMap
+import aps.ilecto.geoutils.domain.model.BaseMap
 
 @Entity(tableName = "base_maps")
 data class BaseMapEntity(

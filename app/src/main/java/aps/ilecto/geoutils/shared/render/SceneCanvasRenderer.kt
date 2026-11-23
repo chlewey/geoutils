@@ -1,15 +1,15 @@
-package net.interlecto.geoutils.shared.render
+package aps.ilecto.geoutils.shared.render
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.DashPathEffect
 import android.graphics.Paint
 import android.graphics.Path
-import net.interlecto.geoutils.domain.model.MapScene
-import net.interlecto.geoutils.domain.model.SceneShape
-import net.interlecto.geoutils.domain.render.SvgWriter
-import net.interlecto.geoutils.geometry.RasterImage
-import net.interlecto.geoutils.geometry.Vec2
+import aps.ilecto.geoutils.domain.model.MapScene
+import aps.ilecto.geoutils.domain.model.SceneShape
+import aps.ilecto.geoutils.domain.render.SvgWriter
+import aps.ilecto.geoutils.geometry.RasterImage
+import aps.ilecto.geoutils.geometry.Vec2
 
 fun RasterImage.toBitmap(): Bitmap = Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
 

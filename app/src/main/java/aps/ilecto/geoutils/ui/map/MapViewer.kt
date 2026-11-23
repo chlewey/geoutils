@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.ui.map
+package aps.ilecto.geoutils.ui.map
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -20,9 +20,9 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
-import net.interlecto.geoutils.domain.model.MapScene
-import net.interlecto.geoutils.shared.render.SceneCanvasRenderer
-import net.interlecto.geoutils.shared.render.toBitmap
+import aps.ilecto.geoutils.domain.model.MapScene
+import aps.ilecto.geoutils.shared.render.SceneCanvasRenderer
+import aps.ilecto.geoutils.shared.render.toBitmap
 import kotlin.math.min
 
 private const val MAX_ZOOM = 16f

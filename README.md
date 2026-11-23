@@ -67,10 +67,10 @@ can:
 
 ## Project structure
 
-Base package: `net.interlecto.geoutils`
+Base package: `aps.ilecto.geoutils`
 
 ```
-net/interlecto/geoutils/
+aps/ilecto/geoutils/
 ├── data/       Room database (entities, DAOs), JSON parsing, repositories
 ├── domain/     domain objects (models) and scene rendering (SVG, raster)
 ├── geometry/   project-specific math: spherical geometry, projections

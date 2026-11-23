@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.ui
+package aps.ilecto.geoutils.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import net.interlecto.geoutils.data.repository.BaseMapRepository
+import aps.ilecto.geoutils.data.repository.BaseMapRepository
 import javax.inject.Inject
 
 /** Runs startup work while the splash screen is shown. */

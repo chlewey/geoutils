@@ -1,7 +1,7 @@
-package net.interlecto.geoutils.domain.model
+package aps.ilecto.geoutils.domain.model
 
-import net.interlecto.geoutils.geometry.RasterImage
-import net.interlecto.geoutils.geometry.Vec2
+import aps.ilecto.geoutils.geometry.RasterImage
+import aps.ilecto.geoutils.geometry.Vec2
 
 /**
  * A rendered map, ready to draw or export. All coordinates are in pixels of a

@@ -1,4 +1,4 @@
-package net.interlecto.geoutils.data.settings
+package aps.ilecto.geoutils.data.settings
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -8,7 +8,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
-import net.interlecto.geoutils.geometry.GeoPoint
+import aps.ilecto.geoutils.geometry.GeoPoint
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton

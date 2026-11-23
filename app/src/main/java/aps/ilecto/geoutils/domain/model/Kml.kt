@@ -1,6 +1,6 @@
-package net.interlecto.geoutils.domain.model
+package aps.ilecto.geoutils.domain.model
 
-import net.interlecto.geoutils.geometry.GeoPoint
+import aps.ilecto.geoutils.geometry.GeoPoint
 
 /** The parts of a KML file the app uses: placemarks with geometry and style. */
 data class KmlDocument(

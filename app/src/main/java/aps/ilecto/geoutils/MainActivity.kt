@@ -1,4 +1,4 @@
-package net.interlecto.geoutils
+package aps.ilecto.geoutils
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -7,9 +7,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dagger.hilt.android.AndroidEntryPoint
-import net.interlecto.geoutils.ui.MainViewModel
-import net.interlecto.geoutils.ui.navigation.GeoUtilsNavHost
-import net.interlecto.geoutils.ui.theme.GeoUtilsTheme
+import aps.ilecto.geoutils.ui.MainViewModel
+import aps.ilecto.geoutils.ui.navigation.GeoUtilsNavHost
+import aps.ilecto.geoutils.ui.theme.GeoUtilsTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {

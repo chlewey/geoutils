@@ -1,9 +1,9 @@
-package net.interlecto.geoutils.ui.map
+package aps.ilecto.geoutils.ui.map
 
-import net.interlecto.geoutils.geometry.AspectControls
-import net.interlecto.geoutils.geometry.GeoPoint
-import net.interlecto.geoutils.geometry.ProjectionFamily
-import net.interlecto.geoutils.geometry.ProjectionType
+import aps.ilecto.geoutils.geometry.AspectControls
+import aps.ilecto.geoutils.geometry.GeoPoint
+import aps.ilecto.geoutils.geometry.ProjectionFamily
+import aps.ilecto.geoutils.geometry.ProjectionType
 
 /** How the azimuth slider works: off (fixed at 0), or ranging over -180..180 or 0..360. */
 enum class AzimuthMode(val range: ClosedFloatingPointRange<Double>) {

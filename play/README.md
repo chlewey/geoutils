@@ -10,12 +10,15 @@ Package: `aps.ilecto.geoutils`.
 | App bundle (release) | `app/build/outputs/bundle/release/app-release.aab` (build with `./gradlew bundleRelease`; not committed) |
 | App icon, 512×512 | `icon-512.png` |
 | Feature graphic, 1024×500 | `feature-graphic.png` |
-| Phone screenshots, 1080×2160 (2:1, Play's maximum) | `screenshots/phone/01-orthographic.png`, `02-azimuthal.png`, `03-view.png` |
+| Phone screenshots, 1080×2160 (2:1, Play's maximum) | `screenshots/phone/01-orthographic.png`, `02-azimuthal.png`, `03-view.png`, `04-mollweide-external-image.png`, `05-equal-earth-route.png`, `06-oblique-mercator.png` |
 
 Screenshots come from a real phone (1080×2388) running the debug build,
 cropped to 2:1 to remove the status bar (which showed notifications). The View
 shot uses a neutral center (-30°, 20°) so no real location appears. Retake them
-when the UI changes. Play also wants 7-inch and 10-inch tablet screenshots only
+when the UI changes. `04-mollweide-external-image.png` shows a user-loaded image (Jupiter) in Mollweide.
+TODO before publishing: confirm the source and license of that image and add its attribution to the listing, or retake the shot with an openly licensed image.
+
+Play also wants 7-inch and 10-inch tablet screenshots only
 if you want the app featured on tablets; they are optional.
 
 ## Listing (English, en-US)

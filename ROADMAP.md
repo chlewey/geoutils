@@ -6,7 +6,8 @@ early design choices, the MVP notes say so, so the MVP doesn't need to be
 rewritten later.
 
 **Current state (2026-11-07):** milestones 0 to 3 are done (v0.3, merged into
-`main`); milestone 4 is next. The landing page at <https://geoutils.ilecto.app>
+`main`); next up are settings, a quick background color and a visual identity
+redesign, then milestone 4. The landing page at <https://geoutils.ilecto.app>
 (`site/`) shows the same plan in short.
 
 Conventions used throughout:
@@ -309,6 +310,31 @@ both are fixed and covered by a test.
       φ, while equal area would need the area below parallel φ to grow as
       sin φ. Options: add it as it is (a globular that is equal-area only in
       longitude), or derive a truly equal-area spacing along each arc first.
+
+## Next up: settings, quick background color and new identity
+
+Taken ahead of the rest of milestone 4 (owner's request, 2026-11-24). Not
+started.
+
+- [ ] **Settings page**, reachable from the main screen:
+  - language (system default, or a chosen language; the app strings need to
+    be translated or at least externalized first);
+  - theme: light, dark or follow the system;
+  - default coordinates for points A and B (the geodesy tools), used as the
+    initial values;
+  - stored with DataStore (or Room); more settings will follow, so build it
+    as a list of sections that is easy to extend.
+- [ ] **Quick way to change the map background color** (the color outside the
+      globe or map outline and behind transparent areas): a control on the
+      map screen, such as a color chip with a few presets plus a custom
+      picker, applied to the preview and to the SVG export.
+- [ ] **Redesign of the visual identity**: revisit the globe mark, palette,
+      launcher/splash icons, site and social card set up in `docs/identity/`.
+      Decide the direction first (keep, evolve or replace the legacy globe),
+      then regenerate the rasters and update `docs/identity/`, the site and
+      the Play assets.
+
+---
 
 ## Milestone 4: Base map library (v0.4)
 

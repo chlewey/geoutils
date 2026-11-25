@@ -33,7 +33,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -43,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.interlecto.geoutils.R
 import net.interlecto.geoutils.data.export.MapExporter.Format
 import net.interlecto.geoutils.geometry.ProjectionFamily
+import net.interlecto.geoutils.ui.theme.Palette
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -126,7 +126,7 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
                 Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(Color(0xFF000814)),
+                    .background(Palette.Night),
                 contentAlignment = Alignment.Center,
             ) {
                 // Cylindrical maps are cut at an arbitrary latitude (Mercator's

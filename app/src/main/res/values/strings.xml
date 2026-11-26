@@ -1,6 +1,18 @@
 <resources>
     <string name="app_name">Geo-Utils</string>
 
+    <string name="more_options">More options</string>
+    <string name="back">Back</string>
+    <string name="save">Save</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_default_points">Default points</string>
+    <string name="settings_default_points_hint">The A and B the tools start with until you use points of your own. Longitude and latitude in degrees.</string>
+
     <string name="export">Export</string>
     <string name="export_save_svg">Save as SVG</string>
     <string name="export_save_png">Save as PNG</string>

@@ -29,9 +29,11 @@ import net.interlecto.geoutils.data.image.RasterLoader
 import net.interlecto.geoutils.data.kml.KmlRepository
 import net.interlecto.geoutils.data.location.LocationProvider
 import net.interlecto.geoutils.data.repository.BaseMapRepository
+import net.interlecto.geoutils.data.settings.AppSettings
 import net.interlecto.geoutils.data.settings.PointPair
 import net.interlecto.geoutils.data.settings.SavedPoints
 import net.interlecto.geoutils.data.settings.SavedPointsRepository
+import net.interlecto.geoutils.data.settings.SettingsRepository
 import net.interlecto.geoutils.domain.model.FeatureStyle
 import net.interlecto.geoutils.domain.model.Geometry
 import net.interlecto.geoutils.domain.model.KmlDocument
@@ -68,6 +70,8 @@ data class MapUiState(
     val distances: Distances? = null,
     /** Last points used, to fill in the point fields (also after a restart). */
     val savedPoints: SavedPoints = SavedPoints(),
+    /** A and B from the settings, used while a tool has no points of its own. */
+    val defaultPoints: PointPair = AppSettings.DEFAULT_POINTS,
     val showGraticule: Boolean = true,
     val showSpecialParallels: Boolean = false,
     val scene: MapScene? = null,
@@ -146,6 +150,7 @@ class MapViewModel @Inject constructor(
     private val exporter: MapExporter,
     private val locationProvider: LocationProvider,
     private val savedPointsRepository: SavedPointsRepository,
+    settingsRepository: SettingsRepository,
     @DefaultDispatcher private val cpu: CoroutineDispatcher,
 ) : ViewModel() {
 
@@ -168,6 +173,10 @@ class MapViewModel @Inject constructor(
         }
         viewModelScope.launch {
             savedPointsRepository.points.collect { saved -> _state.update { it.copy(savedPoints = saved) } }
+        }
+        viewModelScope.launch {
+            settingsRepository.settings.map { it.defaultPoints }.distinctUntilChanged()
+                .collect { points -> _state.update { it.copy(defaultPoints = points) } }
         }
         viewModelScope.launch {
             state.map { it.renderInput }.distinctUntilChanged().collectLatest(::render)

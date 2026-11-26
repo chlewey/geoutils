@@ -163,8 +163,8 @@ private fun ViewTab(state: MapUiState, viewModel: MapViewModel) {
             Label(stringResource(R.string.equator_title))
             Hint(stringResource(R.string.equator_hint))
             PointPairEditor(
-                initialA = state.savedPoints.equator?.a,
-                initialB = state.savedPoints.equator?.b,
+                initialA = state.savedPoints.equator?.a ?: state.defaultPoints.a,
+                initialB = state.savedPoints.equator?.b ?: state.defaultPoints.b,
                 center = view.aspectFor(type).first,
                 actionLabel = stringResource(R.string.apply),
                 onApply = viewModel::setEquatorThrough,
@@ -232,8 +232,8 @@ private fun RouteSection(state: MapUiState, viewModel: MapViewModel) {
     val route = state.route
     Label(stringResource(R.string.route_title))
     PointPairEditor(
-        initialA = route?.from ?: state.savedPoints.route?.a,
-        initialB = route?.to ?: state.savedPoints.route?.b,
+        initialA = route?.from ?: state.savedPoints.route?.a ?: state.defaultPoints.a,
+        initialB = route?.to ?: state.savedPoints.route?.b ?: state.defaultPoints.b,
         center = state.view.aspectFor(state.projectionType).first,
         actionLabel = stringResource(R.string.route_show),
         onApply = { a, b ->
@@ -537,13 +537,13 @@ private fun AzimuthControl(
 
 /**
  * Two points typed as longitude/latitude, each of which can be filled from
- * the current center, and a button to use them.
+ * the current center (when [center] is given), and a button to use them.
  */
 @Composable
-private fun PointPairEditor(
+internal fun PointPairEditor(
     initialA: GeoPoint?,
     initialB: GeoPoint?,
-    center: GeoPoint,
+    center: GeoPoint?,
     actionLabel: String,
     onApply: (GeoPoint, GeoPoint) -> Unit,
 ) {
@@ -584,7 +584,7 @@ private fun pointFields(initial: GeoPoint?): PointFields = remember(initial) {
 private fun formatDegrees(v: Double) = "%.4f".format(java.util.Locale.ROOT, v).trimEnd('0').trimEnd('.')
 
 @Composable
-private fun PointRow(label: String, fields: PointFields, center: GeoPoint) {
+private fun PointRow(label: String, fields: PointFields, center: GeoPoint?) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.width(16.dp))
         OutlinedTextField(
@@ -603,13 +603,13 @@ private fun PointRow(label: String, fields: PointFields, center: GeoPoint) {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
             modifier = Modifier.weight(1f),
         )
-        TextButton(onClick = { fields.set(center) }) { Text(stringResource(R.string.use_center)) }
+        if (center != null) TextButton(onClick = { fields.set(center) }) { Text(stringResource(R.string.use_center)) }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun <T> SegmentedChoice(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit) {
+internal fun <T> SegmentedChoice(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit) {
     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         options.forEachIndexed { index, (value, label) ->
             SegmentedButton(
